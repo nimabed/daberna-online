@@ -112,9 +112,6 @@ class Client:
         self.draw_rects()
         
 
-    
-
-            
 
 client = Client("192.168.1.9", 9999)
 
@@ -140,7 +137,6 @@ while True:
         client.net.send("start")
         
     else:
-        
         client.run()
         if game.rand_num:
             client.draw_random_num(game.rand_num)
