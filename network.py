@@ -24,12 +24,8 @@ class Network:
             return pickle.loads(self.client.recv(4096*2))
         except socket.error as e:
             print(f"Sending error: {e}")
-
-    def send_for_object(self, data):
-        try:
-            self.client.send(data.encode())
-            time.sleep(5)
-            return self.client.recv(4096).decode()
-        except socket.error as e:
-            print(f"Send for object error: {e}")
+            
+    # Adding receive method
+    def receive(self):
+        return self.client.recv(1024).decode()        
 

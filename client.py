@@ -81,11 +81,11 @@ class Client:
                 rect_card.append(Rects(x, y, list[row][col]))
         return rect_card
             
-    def rect_check(self):
+    def rect_check(self, number):
         # self.screen.fill((255,255,255))
         if self.get_pos:
             for rect in self.game_rects[self.p_id-1]:
-                if rect.clicked(self.get_pos):
+                if rect.clicked(self.get_pos) and rect.text == str(number):
                     self.marked_rects.append(rect)
 
     def draw_ready(self):
@@ -103,15 +103,16 @@ class Client:
             for rect in self.marked_rects:
                 rect.draw_lines(self.screen)
 
+    def draw_random_num(self, number):
+        text = self.game_font.render(f"Number: {str(number)}", 1, (255,0,0))
+        text_rect = text.get_rect(center=(self.width/2, self.height/2))
+        self.screen.blit(text, text_rect)
+
     def run(self):
         self.draw_rects()
         
-    def print_rand_num(self, rand_list):
-        current_time = time.time()
-        if current_time - self.start_time >= 5:
-            print(rand_list[self.counter])
-            self.counter += 1
-            self.start_time = current_time
+
+    
 
             
 
@@ -133,15 +134,20 @@ while True:
     client.screen.fill((255,255,255))    
     if not game.both_connected():
         client.draw_ready()
-    else:
+
+    elif game.both_connected() and not game.running:
         client.run()
-        client.print_rand_num(game.rand_nums)
-
-        # pygame.time.delay(4000)    
-        client.rect_check()
+        client.net.send("start")
+        
+    else:
+        
+        client.run()
+        if game.rand_num:
+            client.draw_random_num(game.rand_num)
+            client.rect_check(game.rand_num)
         client.draw_marked_rects()
-            
 
+           
     pygame.display.update()
     clock.tick(60)
     

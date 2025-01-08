@@ -3,11 +3,9 @@ from _thread import *
 from gctl import Game
 
 
-
-
 host = "192.168.1.9"
 port = 9999
-numbers = [i for i in range(1,91)]
+
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 try:
@@ -24,13 +22,18 @@ def generate_card():
     return [[str(item) for item in row]for row in card]
 
 
+# random numbers sending mechanism changed
 def random_numbers(game):
-    while game.both_connected() and numbers:
-        num = random.choice(numbers)
-        print(num)
-        game.rand_nums.append(num)
-        numbers.remove(num)
-        time.sleep(5)
+    global numbers
+
+    while True:
+        if game.both_ready():
+            game.running = True
+            num = random.choice(numbers)
+            print(f"Numbers is: {num}")
+            game.rand_num = num
+            numbers.remove(num)
+            time.sleep(5)
     
     
 def active_client(connection, player, game):
@@ -48,15 +51,21 @@ def active_client(connection, player, game):
                 if data == "ready" and not game.running:
                     response_data = players_card   
                     connection.sendall(pickle.dumps(response_data))
+
+                elif data == "start":
+                    if player == 1:
+                        game.p1_ready = True
+                    else:
+                        game.p2_ready = True
+
                     
                 elif data != "get":
                     pass
                 
-               
                 response = game
                 connection.sendall(pickle.dumps(response))
+                # print(f"player 1: {game.p1_ready} || player 2: {game.p2_ready}")
                     
-                
 
         except:
             pass
@@ -76,12 +85,13 @@ print("listening...")
 player = 0
 game = Game()
 players_card = {i:generate_card() for i in range(1,3)}
-
+numbers = [i for i in range(1,91)]
+clients = []
 
 while True:
     conn, addr = server.accept()
     player += 1
-    # clients.append(conn)
+    clients.append(conn)
     print(f"Player {player} with address {addr} added!")
     if player == 2:
         game.p1, game.p2 = True, True
