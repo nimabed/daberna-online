@@ -30,7 +30,7 @@ def random_numbers(game):
         if game.both_ready():
             game.running = True
             num = random.choice(numbers)
-            print(f"Numbers is: {num}")
+            # print(f"Numbers is: {num}")
             game.rand_num = num
             numbers.remove(num)
             time.sleep(5)
