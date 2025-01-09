@@ -14,6 +14,8 @@ class Game:
         self.running = False
         self.number_request = False
         self.rand_num = None
+        self.p1_moves = []
+        self.p2_moves = []
             
 
     def both_connected(self):
@@ -33,6 +35,14 @@ class Game:
 
     def num_check(self):
         return self.p1_num == self.p2_num
+    
+
+    def player_move(self, p_id, number):
+        if p_id == 1:
+            self.p1_moves.append(number)
+        else:
+            self.p2_moves.append(number)
+        
     
 
         

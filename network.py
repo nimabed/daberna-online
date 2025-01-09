@@ -21,7 +21,7 @@ class Network:
     def send(self, data):
         try:
             self.client.send(data.encode())
-            return pickle.loads(self.client.recv(4096*2))
+            return pickle.loads(self.client.recv(4096*3))
         except socket.error as e:
             print(f"Sending error: {e}")
             

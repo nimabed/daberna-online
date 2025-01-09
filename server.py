@@ -60,7 +60,7 @@ def active_client(connection, player, game):
 
                     
                 elif data != "get":
-                    pass
+                    game.player_move(player, data)
                 
                 response = game
                 connection.sendall(pickle.dumps(response))

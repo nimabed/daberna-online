@@ -87,6 +87,7 @@ class Client:
             for rect in self.game_rects[self.p_id-1]:
                 if rect.clicked(self.get_pos) and rect.text == str(number):
                     self.marked_rects.append(rect)
+                    self.net.send(rect.text)
 
     def draw_ready(self):
         # self.screen.fill((255,255,255))
@@ -102,6 +103,20 @@ class Client:
         if self.marked_rects:
             for rect in self.marked_rects:
                 rect.draw_lines(self.screen)
+
+    def draw_opponent_moves(self, game):
+        if game.p1_moves or game.p2_moves:
+            if self.p_id == 1:
+                rect_l = self.game_rects[1]
+                opponent_moves = game.p2_moves
+            else:
+                rect_l = self.game_rects[0]
+                opponent_moves = game.p1_moves
+            for rect in rect_l:
+                if rect.text in opponent_moves:
+                    rect.draw_lines(self.screen)
+            
+
 
     def draw_random_num(self, number):
         text = self.game_font.render(f"Number: {str(number)}", 1, (255,0,0))
@@ -141,7 +156,8 @@ while True:
         if game.rand_num:
             client.draw_random_num(game.rand_num)
             client.rect_check(game.rand_num)
-        client.draw_marked_rects()
+            client.draw_marked_rects()
+            client.draw_opponent_moves(game)
 
            
     pygame.display.update()
