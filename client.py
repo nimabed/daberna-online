@@ -115,11 +115,35 @@ class Client:
             for rect in rect_l:
                 if rect.text in opponent_moves:
                     rect.draw_lines(self.screen)
-            
 
+    def result(self, game):
+        if game.result[0] and game.result[1]:
+            text = self.game_font.render("Game is tie", 1, (0,255,0))
+            text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
+            self.screen.blit(text, text_rect)
+
+        elif self.p_id == 1 and game.result[0] and not game.result[1]:
+            text = self.game_font.render("You Win", 1, (0,255,0))
+            text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
+            self.screen.blit(text, text_rect)
+
+        elif self.p_id == 1 and not game.result[0] and game.result[1]:
+            text = self.game_font.render("You Lose", 1, (0,255,0))
+            text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
+            self.screen.blit(text, text_rect)
+
+        elif self.p_id == 2 and game.result[0] and not game.result[1]:
+            text = self.game_font.render("You Lose", 1, (0,255,0))
+            text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
+            self.screen.blit(text, text_rect)
+
+        elif self.p_id == 2 and not game.result[0] and game.result[1]:
+            text = self.game_font.render("You Win", 1, (0,255,0))
+            text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
+            self.screen.blit(text, text_rect)        
 
     def draw_random_num(self, number):
-        text = self.game_font.render(f"Number: {str(number)}", 1, (255,0,0))
+        text = self.game_font.render(str(number), 1, (255,0,0))
         text_rect = text.get_rect(center=(self.width/2, self.height/2))
         self.screen.blit(text, text_rect)
 
@@ -150,7 +174,7 @@ while True:
     elif game.both_connected() and not game.running:
         client.run()
         client.net.send("start")
-        
+            
     else:
         client.run()
         if game.rand_num:
@@ -158,6 +182,7 @@ while True:
             client.rect_check(game.rand_num)
             client.draw_marked_rects()
             client.draw_opponent_moves(game)
+            client.result(game)
 
            
     pygame.display.update()

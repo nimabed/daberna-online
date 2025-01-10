@@ -22,19 +22,20 @@ def generate_card():
     return [[str(item) for item in row]for row in card]
 
 
-# random numbers sending mechanism changed
 def random_numbers(game):
     global numbers
 
     while True:
         if game.both_ready():
+            if game.result[0] or game.result[1]:
+                break
             game.running = True
             num = random.choice(numbers)
             # print(f"Numbers is: {num}")
             game.rand_num = num
             numbers.remove(num)
             time.sleep(5)
-    
+        
     
 def active_client(connection, player, game):
 
@@ -61,6 +62,10 @@ def active_client(connection, player, game):
                     
                 elif data != "get":
                     game.player_move(player, data)
+                    game.winner_check(player, players_card[player])
+
+                # if (game.result[0] and game.result[1]) or (game.result[0] or game.result[1]):
+                #     game.running = False
                 
                 response = game
                 connection.sendall(pickle.dumps(response))
