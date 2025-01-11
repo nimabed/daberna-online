@@ -25,7 +25,7 @@ def generate_card():
 def random_numbers(game):
     global numbers
 
-    while not game.result[0] or not game.result[1]:
+    while True:
         if game.both_ready():
             if game.result[0] or game.result[1]:
                 break
