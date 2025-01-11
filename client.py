@@ -171,7 +171,7 @@ class Client:
             self.draw_rects()
             if game.rand_num:
                 self.draw_random_num(game.rand_num)
-            self.rect_check(game.rand_num)
+                self.rect_check(game.rand_num)
             self.draw_marked_rects()
             self.draw_opponent_moves()
             self.result()

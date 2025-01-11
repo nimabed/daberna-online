@@ -36,7 +36,7 @@ def random_numbers(game):
             numbers.remove(num)
             time.sleep(5)
     game.rand_num = None
-    game.running = False
+    # game.running = False
         
     
 def active_client(connection, player, game):
