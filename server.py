@@ -25,7 +25,7 @@ def generate_card():
 def random_numbers(game):
     global numbers
 
-    while True:
+    while not game.result[0] or not game.result[1]:
         if game.both_ready():
             if game.result[0] or game.result[1]:
                 break
@@ -35,6 +35,8 @@ def random_numbers(game):
             game.rand_num = num
             numbers.remove(num)
             time.sleep(5)
+    game.rand_num = None
+    game.running = False
         
     
 def active_client(connection, player, game):
