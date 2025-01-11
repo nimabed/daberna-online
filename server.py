@@ -1,4 +1,4 @@
-import socket, pickle, random, asyncio, time
+import socket, pickle, random, time
 from _thread import *
 from gctl import Game
 

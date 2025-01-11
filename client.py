@@ -1,4 +1,4 @@
-import pygame, socket, pickle, sys, time
+import pygame, sys
 from network import Network
 
 
