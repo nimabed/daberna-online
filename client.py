@@ -41,8 +41,7 @@ class Client:
         self.game_rects = self.cards_rects()
         self.marked_rects = []
         self.get_pos = None
-        self.start_time = time.time()
-        self.counter = 0
+        
 
         # Window setup
         self.width = 800
@@ -89,12 +88,27 @@ class Client:
                     self.marked_rects.append(rect)
                     self.net.send(rect.text)
 
-    def draw_ready(self):
-        # self.screen.fill((255,255,255))
-        self.ready_state()
-        # self.start_state()
+    def draw_player_label(self):
+        if self.p_id == 1:
+            you_text = self.game_font.render("You", 1, (255,0,0))
+            you_text_rect = you_text.get_rect(topleft=(10,10))
+            opponent_text = self.game_font.render("Opponent", 1, (255,0,0))
+            opponent_text_rect = opponent_text.get_rect(topleft=(10,310))
+            self.screen.blit(you_text, you_text_rect)
+            self.screen.blit(opponent_text, opponent_text_rect)
+        else:
+            you_text = self.game_font.render("You", 1, (255,0,0))
+            you_text_rect = you_text.get_rect(topleft=(10,310))
+            opponent_text = self.game_font.render("Opponent", 1, (255,0,0))
+            opponent_text_rect = opponent_text.get_rect(topleft=(10,10))
+            self.screen.blit(you_text, you_text_rect)
+            self.screen.blit(opponent_text, opponent_text_rect)
 
+    def draw_ready(self):
+        self.ready_state()
+        
     def draw_rects(self):
+        self.draw_player_label()
         for rects in self.game_rects:
             for rect in rects:
                 rect.draw(self.screen)
@@ -104,7 +118,7 @@ class Client:
             for rect in self.marked_rects:
                 rect.draw_lines(self.screen)
 
-    def draw_opponent_moves(self, game):
+    def draw_opponent_moves(self):
         if game.p1_moves or game.p2_moves:
             if self.p_id == 1:
                 rect_l = self.game_rects[1]
@@ -116,7 +130,7 @@ class Client:
                 if rect.text in opponent_moves:
                     rect.draw_lines(self.screen)
 
-    def result(self, game):
+    def result(self):
         if game.result[0] and game.result[1]:
             text = self.game_font.render("Game is tie", 1, (0,255,0))
             text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
@@ -147,10 +161,21 @@ class Client:
         text_rect = text.get_rect(center=(self.width/2, self.height/2))
         self.screen.blit(text, text_rect)
 
-    def run(self):
-        self.draw_rects()
+    def run(self, game):
+        if not game.both_connected():
+            self.draw_ready()
+        elif game.both_connected and not game.running:
+            self.draw_rects()
+            self.net.send("start")
+        else:
+            self.draw_rects()
+            if game.rand_num:
+                self.draw_random_num(game.rand_num)
+                self.rect_check(game.rand_num)
+                self.draw_marked_rects()
+                self.draw_opponent_moves()
+                self.result()
         
-
 
 client = Client("192.168.1.9", 9999)
 
@@ -168,23 +193,8 @@ while True:
     game = client.net.send("get")
 
     client.screen.fill((255,255,255))    
-    if not game.both_connected():
-        client.draw_ready()
-
-    elif game.both_connected() and not game.running:
-        client.run()
-        client.net.send("start")
-            
-    else:
-        client.run()
-        if game.rand_num:
-            client.draw_random_num(game.rand_num)
-            client.rect_check(game.rand_num)
-            client.draw_marked_rects()
-            client.draw_opponent_moves(game)
-            client.result(game)
-
-           
+    client.run(game)
+     
     pygame.display.update()
     clock.tick(60)
     
