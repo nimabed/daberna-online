@@ -42,7 +42,6 @@ class Client:
         self.marked_rects = []
         self.get_pos = None
         
-
         # Window setup
         self.width = 800
         self.height = 600
@@ -89,6 +88,7 @@ class Client:
                     self.net.send(rect.text)
 
     def draw_player_label(self):
+        pygame.draw.line(self.screen, (0,0,0), (0,self.height/2), (self.width, self.height/2), 2)
         if self.p_id == 1:
             you_text = self.game_font.render("You", 1, (255,0,0))
             you_text_rect = you_text.get_rect(topleft=(10,10))
@@ -158,7 +158,7 @@ class Client:
 
     def draw_random_num(self, number):
         text = self.game_font.render(str(number), 1, (255,0,0))
-        text_rect = text.get_rect(center=(self.width/2, self.height/2))
+        text_rect = text.get_rect(midbottom=(self.width/2, self.height/2))
         self.screen.blit(text, text_rect)
 
     def run(self, game):
@@ -172,14 +172,13 @@ class Client:
             if game.rand_num:
                 self.draw_random_num(game.rand_num)
                 self.rect_check(game.rand_num)
+            else:
+                self.result()
             self.draw_marked_rects()
             self.draw_opponent_moves()
-            self.result()
             
-                
-        
-
-client = Client("192.168.1.9", 9999)
+               
+client = Client("192.168.26.210", 9999)
 
     
 while True:

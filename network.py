@@ -20,8 +20,18 @@ class Network:
     def send(self, data):
         try:
             self.client.send(data.encode())
-            return pickle.loads(self.client.recv(4096*5))
+            if data.isdigit() or data == "start":
+                return
+            else:
+                # return msgpack.unpackb(self.client.recv(4096*3))
+                return pickle.loads(self.client.recv(30720))
+                
+                
+            
         except socket.error as e:
             print(f"Sending error: {e}")
                    
 
+# mynet = Network("192.168.1.9", 9999)
+
+# mynet.send("ready")

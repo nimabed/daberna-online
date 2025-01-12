@@ -3,7 +3,7 @@ from _thread import *
 from gctl import Game
 
 
-host = "192.168.1.9"
+host = "192.168.26.210"
 port = 9999
 
 
@@ -27,16 +27,16 @@ def random_numbers(game):
 
     while True:
         if game.both_ready():
-            if game.result[0] or game.result[1]:
-                break
             game.running = True
             num = random.choice(numbers)
             # print(f"Numbers is: {num}")
             game.rand_num = num
             numbers.remove(num)
-            time.sleep(5)
-    game.rand_num = None
-    # game.running = False
+            time.sleep(3)
+            if game.result[0] or game.result[1]:
+                game.rand_num = None
+                break
+            time.sleep(2)
         
     
 def active_client(connection, player, game):
@@ -52,7 +52,7 @@ def active_client(connection, player, game):
             else:
                 data = raw_data.decode()
                 if data == "ready" and not game.running:
-                    response_data = players_card   
+                    response_data = players_card
                     connection.sendall(pickle.dumps(response_data))
 
                 elif data == "start":
@@ -61,19 +61,14 @@ def active_client(connection, player, game):
                     else:
                         game.p2_ready = True
 
-                    
                 elif data != "get":
                     game.player_move(player, data)
                     game.winner_check(player, players_card[player])
 
-                # if (game.result[0] and game.result[1]) or (game.result[0] or game.result[1]):
-                #     game.running = False
-                
-                response = game
-                connection.sendall(pickle.dumps(response))
-                # print(f"player 1: {game.p1_ready} || player 2: {game.p2_ready}")
+                else:
+                    response = game
+                    connection.sendall(pickle.dumps(response, protocol=pickle.HIGHEST_PROTOCOL))
                     
-
         except:
             pass
 
