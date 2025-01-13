@@ -1,9 +1,9 @@
-import socket, pickle, random, time
+import socket, pickle, random, time, hashlib
 from _thread import *
 from gctl import Game
 
 
-host = "192.168.26.210"
+host = "192.168.1.9"
 port = 9999
 
 
@@ -54,6 +54,9 @@ def active_client(connection, player, game):
                 if data == "ready" and not game.running:
                     response_data = players_card
                     connection.sendall(pickle.dumps(response_data))
+                    # json_data = json.dumps(players_card)
+                    # connection.sendall(json_data.encode())
+                    
 
                 elif data == "start":
                     if player == 1:
@@ -66,8 +69,15 @@ def active_client(connection, player, game):
                     game.winner_check(player, players_card[player])
 
                 else:
-                    response = game
-                    connection.sendall(pickle.dumps(response, protocol=pickle.HIGHEST_PROTOCOL))
+                    # response = game
+                    serialized_game = game.serialize()
+                    checksum = hashlib.sha256(serialized_game).hexdigest()
+                    serialized_with_checksum = f"{checksum}:{serialized_game.decode()}".encode()
+                    connection.sendall(serialized_with_checksum)
+                    # connection.sendall(pickle.dumps(response, protocol=pickle.HIGHEST_PROTOCOL))
+                    # json_data = json.dumps(response)
+                    # connection.sendall(json_data.encode())
+                    
                     
         except:
             pass

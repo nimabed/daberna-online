@@ -1,0 +1,13 @@
+syntax = "proto3"; 
+
+message Game {
+    bool p1 = 1; 
+    bool p2 = 2; 
+    bool p1_ready = 3; 
+    bool p2_ready = 4; 
+    bool running = 5; 
+    repeated int32 result = 6; 
+    int32 rand_num = 7; 
+    repeated string p1_moves = 8; 
+    repeated string p2_moves = 9; 
+}
