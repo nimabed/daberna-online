@@ -1,6 +1,5 @@
 import socket, pickle, hashlib
 from gctl import Game
-# import game_pb2
 
 class Network:
     def __init__(self, ip, port):
@@ -20,13 +19,8 @@ class Network:
             print(f"Connection error: {e}")
 
     def check_seri(self, checksum, serialized_game):
-        # checksum, serialized_game = raw_data.decode().split(":", 1)
         received_checksum = hashlib.sha256(serialized_game).hexdigest()
-        if received_checksum != checksum:
-            raise ValueError("Checksum mismatch!")
-        else:
-            return True
-
+        return received_checksum == checksum
 
     def send(self, data):
         try:
@@ -36,23 +30,20 @@ class Network:
                 return pickle.loads(self.client.recv(1024))
             
             elif data == "get":
-                checksum, serialized_game = self.client.recv(4096*5).decode().split(":", 1)
-                serialized_bytes = serialized_game.encode()
-                if self.check_seri(checksum, serialized_bytes):
-                    game = Game()
-                    game.deserialize(serialized_bytes)
-                    return game
+                check_list = self.client.recv(4096*5).decode().split(":")
+                if len(check_list) == 2:
+                    checksum, serialized_game = check_list
+                    if self.check_seri(checksum, serialized_game.encode()):
+                        game = Game()
+                        game.deserialize(serialized_game.encode())
+                        return game
+                    else:
+                        print("Checksum mismatch!")
+                        return
                 else:
-                    print("The checksums is not identical")
-                # json_data = self.client.recv(4096).decode()
-                # print(json_data)
-                # deserialize = json.loads(json_data)
-                # print(deserialize)
-                # return msgpack.unpackb(self.client.recv(4096*3))
-                # return pickle.loads(self.client.recv(30720))
-                
-                
-            
+                    print("The checksum list shorter than 2")
+                    return
+                   
         except socket.error as e:
             print(f"Sending error: {e}")
                    

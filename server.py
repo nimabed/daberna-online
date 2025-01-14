@@ -16,7 +16,7 @@ except socket.error as e:
 def generate_card():
     card = []
     for i in range(9):
-        card.append(random.sample(range(1 + i*10, 10 + i*10), 3))
+        card.append(random.sample(range(1 + i*10, 11 + i*10), 3))
     for _ in range(15):
         card[random.randint(0,8)][random.randint(0,2)] = "*"
     return [[str(item) for item in row]for row in card]
@@ -29,14 +29,13 @@ def random_numbers(game):
         if game.both_ready():
             game.running = True
             num = random.choice(numbers)
-            # print(f"Numbers is: {num}")
             game.rand_num = num
             numbers.remove(num)
-            time.sleep(3)
+            time.sleep(2)
             if game.result[0] or game.result[1]:
                 game.rand_num = None
                 break
-            time.sleep(2)
+            time.sleep(3)
         
     
 def active_client(connection, player, game):
@@ -54,10 +53,7 @@ def active_client(connection, player, game):
                 if data == "ready" and not game.running:
                     response_data = players_card
                     connection.sendall(pickle.dumps(response_data))
-                    # json_data = json.dumps(players_card)
-                    # connection.sendall(json_data.encode())
                     
-
                 elif data == "start":
                     if player == 1:
                         game.p1_ready = True
@@ -69,16 +65,11 @@ def active_client(connection, player, game):
                     game.winner_check(player, players_card[player])
 
                 else:
-                    # response = game
                     serialized_game = game.serialize()
                     checksum = hashlib.sha256(serialized_game).hexdigest()
                     serialized_with_checksum = f"{checksum}:{serialized_game.decode()}".encode()
                     connection.sendall(serialized_with_checksum)
-                    # connection.sendall(pickle.dumps(response, protocol=pickle.HIGHEST_PROTOCOL))
-                    # json_data = json.dumps(response)
-                    # connection.sendall(json_data.encode())
-                    
-                    
+                             
         except:
             pass
 
