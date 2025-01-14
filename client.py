@@ -161,6 +161,16 @@ class Client:
         text_rect = text.get_rect(midbottom=(self.width/2, self.height/2))
         self.screen.blit(text, text_rect)
 
+    def get_game(self, tries):
+        counter = 0
+        while counter <= tries:
+            game = self.net.send("get")
+            if game:
+                return game
+            else:
+                counter += 1
+        raise ValueError("Could not get game object")
+
     def run(self, game):
         if not game.both_connected():
             self.draw_ready()
@@ -191,7 +201,7 @@ while True:
         if event.type == pygame.MOUSEBUTTONDOWN:
             client.get_pos = pygame.mouse.get_pos()
         
-    game = client.net.send("get")
+    game = client.get_game(3)
 
     client.screen.fill((255,255,255))    
     client.run(game)
