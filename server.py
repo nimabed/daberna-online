@@ -1,4 +1,4 @@
-import socket, pickle, random, time, hashlib
+import socket, pickle, random, time, hashlib, struct
 from _thread import *
 from gctl import Game
 
@@ -31,11 +31,11 @@ def random_numbers(game):
             num = random.choice(numbers)
             game.rand_num = num
             numbers.remove(num)
-            time.sleep(2)
-            if game.result[0] or game.result[1]:
-                game.rand_num = None
-                break
-            time.sleep(3)
+            for _ in range(5):
+                if game.result[0] or game.result[1]:
+                    game.rand_num = None
+                    return
+                time.sleep(1)
         
     
 def active_client(connection, player, game):
@@ -67,8 +67,10 @@ def active_client(connection, player, game):
                 else:
                     serialized_game = game.serialize()
                     checksum = hashlib.sha256(serialized_game).hexdigest()
-                    serialized_with_checksum = f"{checksum}:{serialized_game.decode()}".encode()
-                    connection.sendall(serialized_with_checksum)
+                    message_bytes = checksum.encode()+serialized_game
+                    message_length = len(message_bytes) 
+                    connection.sendall(struct.pack("I", message_length))
+                    connection.sendall(message_bytes)
                              
         except:
             pass
