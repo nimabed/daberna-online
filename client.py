@@ -201,7 +201,7 @@ while True:
         if event.type == pygame.MOUSEBUTTONDOWN:
             client.get_pos = pygame.mouse.get_pos()
         
-    game = client.get_game(3)
+    game = client.net.send("get")
 
     client.screen.fill((255,255,255))    
     client.run(game)
