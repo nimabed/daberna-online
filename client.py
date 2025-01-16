@@ -38,6 +38,7 @@ class Client:
         
         # Games variable
         self.cards = self.get_cards()
+        # print(f"Player {self.p_id}: {self.cards}")
         self.game_rects = self.cards_rects()
         self.marked_rects = []
         self.get_pos = None
@@ -171,12 +172,24 @@ class Client:
         text_rect = text.get_rect(midbottom=(self.width/2, self.height/2))
         self.screen.blit(text, text_rect)
 
+    def draw_start_counter(self, counter):
+        text1 = self.game_font.render(f"Starting in ", 1, (0,0,0))
+        text2 = self.game_font.render(f"{counter}s", 1, (255,0,0))
+        merged_surface = pygame.Surface((text1.get_width()+text2.get_width(), max(text1.get_height(),text2.get_height())))
+        merged_surface.fill((255,255,255))
+        merged_surface.blit(text1, (0,0))
+        merged_surface.blit(text2, (text1.get_width(),0))
+        merged_surface_rect = merged_surface.get_rect(midbottom=(self.width/2,self.height/2))
+        self.screen.blit(merged_surface, merged_surface_rect)
+
     def run(self, game):
         if not game.both_connected():
             self.draw_ready()
+
         elif game.both_connected and not game.running:
             self.draw_rects()
-            self.net.send("start")
+            self.draw_start_counter(game.start_counter)
+            # self.net.send("start")
         else:
             self.draw_rects()
             if game.rand_num:

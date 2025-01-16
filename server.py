@@ -26,8 +26,7 @@ def random_numbers(game):
     global numbers
 
     while True:
-        if game.both_ready():
-            game.running = True
+        if game.running:
             num = random.choice(numbers)
             game.rand_num = num
             numbers.remove(num)
@@ -36,7 +35,12 @@ def random_numbers(game):
                     game.rand_num = None
                     return
                 time.sleep(1)
-        
+        else:
+            game.start_counter -= 1
+            time.sleep(2)
+            if game.start_counter == 1:
+                game.running = True
+    
     
 def active_client(connection, player, game):
 

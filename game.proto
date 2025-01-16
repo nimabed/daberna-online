@@ -8,6 +8,7 @@ message Game {
     bool running = 5; 
     repeated int32 result = 6; 
     int32 rand_num = 7; 
-    repeated string p1_moves = 8; 
-    repeated string p2_moves = 9; 
+    int32 start_counter = 8;
+    repeated string p1_moves = 9; 
+    repeated string p2_moves = 10; 
 }

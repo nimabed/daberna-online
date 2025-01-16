@@ -9,6 +9,7 @@ class Game:
         self.running = False
         self.result = [0,0]
         self.rand_num = None
+        self.start_counter = 4
         self.p1_moves = []
         self.p2_moves = []
             
@@ -50,6 +51,7 @@ class Game:
         game_proto.running = self.running
         game_proto.result.extend(self.result)
         game_proto.rand_num = self.rand_num if self.rand_num is not None else 0
+        game_proto.start_counter = self.start_counter
         game_proto.p1_moves.extend(self.p1_moves)
         game_proto.p2_moves.extend(self.p2_moves)
         return game_proto.SerializeToString()
@@ -64,6 +66,7 @@ class Game:
         self.running = game_proto.running
         self.result = list(game_proto.result)
         self.rand_num = game_proto.rand_num if game_proto.rand_num != 0 else None
+        self.start_counter = game_proto.start_counter
         self.p1_moves = list(game_proto.p1_moves)
         self.p2_moves = list(game_proto.p2_moves)
             
