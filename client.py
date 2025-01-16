@@ -87,6 +87,16 @@ class Client:
                     self.marked_rects.append(rect)
                     self.net.send(rect.text)
 
+    def get_game(self, tries):
+        counter = 0
+        while counter <= tries:
+            game = self.net.send("get")
+            if game:
+                return game
+            else:
+                counter += 1
+        raise ValueError("Could not get game object")
+
     def draw_player_label(self):
         pygame.draw.line(self.screen, (0,0,0), (0,self.height/2), (self.width, self.height/2), 2)
         if self.p_id == 1:
@@ -130,7 +140,7 @@ class Client:
                 if rect.text in opponent_moves:
                     rect.draw_lines(self.screen)
 
-    def result(self):
+    def draw_result(self):
         if game.result[0] and game.result[1]:
             text = self.game_font.render("Game is tie", 1, (0,255,0))
             text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
@@ -161,16 +171,6 @@ class Client:
         text_rect = text.get_rect(midbottom=(self.width/2, self.height/2))
         self.screen.blit(text, text_rect)
 
-    def get_game(self, tries):
-        counter = 0
-        while counter <= tries:
-            game = self.net.send("get")
-            if game:
-                return game
-            else:
-                counter += 1
-        raise ValueError("Could not get game object")
-
     def run(self, game):
         if not game.both_connected():
             self.draw_ready()
@@ -183,7 +183,7 @@ class Client:
                 self.draw_random_num(game.rand_num)
                 self.rect_check(game.rand_num)
             else:
-                self.result()
+                self.draw_result()
             self.draw_marked_rects()
             self.draw_opponent_moves()
             
@@ -201,7 +201,7 @@ while True:
         if event.type == pygame.MOUSEBUTTONDOWN:
             client.get_pos = pygame.mouse.get_pos()
         
-    game = client.net.send("get")
+    game = client.get_game(2)
 
     client.screen.fill((255,255,255))    
     client.run(game)

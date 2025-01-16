@@ -60,11 +60,6 @@ class Network:
                     print("Checksum mismatch!")
                     print(data_recv)
                     return
-                # else:
-                #     print(f"The checksum list shorter than 2")
-                #     print(data_recv)
-                #     print(data_recv_list)
-                #     return
                    
         except socket.error as e:
             print(f"Sending error: {e}")
