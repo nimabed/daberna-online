@@ -22,8 +22,16 @@ def generate_card():
     return [[str(item) for item in row]for row in card]
 
 
-def random_numbers(game):
+def random_numbers(game, clients):
     global numbers
+    
+    time.sleep(0.1)
+    for client in clients:
+        try:
+            client.sendall(pickle.dumps(players_cards))
+        except:
+            print("Can not send players cards!")
+            return
 
     while True:
         if game.running:
@@ -43,9 +51,7 @@ def random_numbers(game):
     
     
 def active_client(connection, player, game):
-
-    connection.send(str(player).encode())    
-
+   
     while True:
         try:
             raw_data = connection.recv(4096)
@@ -54,11 +60,11 @@ def active_client(connection, player, game):
                 break
             else:
                 data = raw_data.decode()
-                if data == "ready" and not game.running:
-                    response_data = players_card
-                    connection.sendall(pickle.dumps(response_data))
+                # if data == "ready" and not game.running:
+                #     response_data = players_card
+                #     connection.sendall(pickle.dumps(response_data))
                     
-                elif data == "start":
+                if data == "start":
                     if player == 1:
                         game.p1_ready = True
                     else:
@@ -66,7 +72,7 @@ def active_client(connection, player, game):
 
                 elif data != "get":
                     game.player_move(player, data)
-                    game.winner_check(player, players_card[player])
+                    game.winner_check(player, players_cards[player])
 
                 else:
                     serialized_game = game.serialize()
@@ -93,18 +99,33 @@ print("listening...")
 
 player = 0
 game = Game()
-players_card = {i:generate_card() for i in range(1,3)}
+players_cards = {}
 numbers = [i for i in range(1,91)]
 clients = []
 
 while True:
+
     conn, addr = server.accept()
     player += 1
     clients.append(conn)
+    conn.send(str(player).encode())
     print(f"Player {player} with address {addr} added!")
+
+    try:
+        data = conn.recv(1024)
+        if not data:
+            print("Could not receive number of cards!")
+            break
+        else:
+            cards_number = data.decode()
+            players_cards[player] = [generate_card() for _ in range(int(cards_number))]
+
+    except:
+        pass
+
     if player == 2:
         game.p1, game.p2 = True, True
-        start_new_thread(random_numbers, (game,))
+        start_new_thread(random_numbers, (game, clients))
 
     start_new_thread(active_client, (conn, player, game))
 

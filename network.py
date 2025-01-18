@@ -48,7 +48,7 @@ class Network:
             self.client.send(data.encode())
 
             if data == "ready":
-                return pickle.loads(self.client.recv(1024))
+                return pickle.loads(self.client.recv(4096))
             
             elif data == "get":
                 data_recv = self.received_all()
@@ -63,6 +63,9 @@ class Network:
                    
         except socket.error as e:
             print(f"Sending error: {e}")
+
+    def receive_cards(self):
+        return pickle.loads(self.client.recv(4096))
                    
 
 # mynet = Network("192.168.1.9", 9999)

@@ -31,17 +31,17 @@ class Rects:
 
 
 class Client:
-    def __init__(self, ip, port):
+    def __init__(self, ip, port, cards_num):
         # Network setup
         self.net = Network(ip, port)
         self.p_id = self.net.get_p()
+        self.net.send(str(cards_num))
         
         # Games variable
-        self.cards = self.get_cards()
-        # print(f"Player {self.p_id}: {self.cards}")
-        self.game_rects = self.cards_rects()
-        self.marked_rects = []
+        self.cards = None
+        self.game_rects = None
         self.get_pos = None
+        self.marked_rects = []
         
         # Window setup
         self.width = 800
@@ -68,7 +68,7 @@ class Client:
                 offset_y = 45
             else:
                 offset_y = 345
-            game_rects.append(self.generate_rects(card, offset_y))
+            game_rects.append(self.generate_rects(card[0], offset_y))
         return game_rects
                
     def generate_rects(self, list, offset_y):
@@ -187,9 +187,12 @@ class Client:
             self.draw_ready()
 
         elif game.both_connected and not game.running:
+            if not self.cards:
+                self.cards = self.net.receive_cards()
+                self.game_rects = self.cards_rects()
             self.draw_rects()
             self.draw_start_counter(game.start_counter)
-            # self.net.send("start")
+
         else:
             self.draw_rects()
             if game.rand_num:
@@ -201,7 +204,7 @@ class Client:
             self.draw_opponent_moves()
             
                
-client = Client("192.168.1.9", 9999)
+client = Client("192.168.1.9", 9999, 1)
 
     
 while True:
