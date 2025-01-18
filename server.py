@@ -25,7 +25,7 @@ def generate_card():
 def random_numbers(game, clients):
     global numbers
     
-    time.sleep(0.1)
+    time.sleep(0.2)
     for client in clients:
         try:
             client.sendall(pickle.dumps(players_cards))
@@ -60,19 +60,10 @@ def active_client(connection, player, game):
                 break
             else:
                 data = raw_data.decode()
-                # if data == "ready" and not game.running:
-                #     response_data = players_card
-                #     connection.sendall(pickle.dumps(response_data))
-                    
-                if data == "start":
-                    if player == 1:
-                        game.p1_ready = True
-                    else:
-                        game.p2_ready = True
-
-                elif data != "get":
+        
+                if data != "get":
                     game.player_move(player, data)
-                    game.winner_check(player, players_cards[player])
+                    # game.winner_check(player, players_cards[player][0])
 
                 else:
                     serialized_game = game.serialize()
