@@ -1,5 +1,10 @@
 syntax = "proto3"; 
 
+message Tuple {
+    string first = 1;
+    string second = 2;
+}
+
 message Game {
     bool p1 = 1; 
     bool p2 = 2; 
@@ -9,6 +14,6 @@ message Game {
     repeated int32 result = 6; 
     int32 rand_num = 7; 
     int32 start_counter = 8;
-    repeated string p1_moves = 9; 
-    repeated string p2_moves = 10; 
+    repeated Tuple p1_moves = 9; 
+    repeated Tuple p2_moves = 10; 
 }

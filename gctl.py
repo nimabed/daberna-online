@@ -22,9 +22,9 @@ class Game:
     
     def player_move(self, p_id, number):
         if p_id == 1:
-            self.p1_moves.append(number)
+            self.p1_moves.append(tuple(number.split(",")))
         else:
-            self.p2_moves.append(number)
+            self.p2_moves.append(tuple(number.split(",")))
 
     def winner_check(self, p_id, card):
         if p_id == 1:
@@ -52,8 +52,18 @@ class Game:
         game_proto.result.extend(self.result)
         game_proto.rand_num = self.rand_num if self.rand_num is not None else 0
         game_proto.start_counter = self.start_counter
-        game_proto.p1_moves.extend(self.p1_moves)
-        game_proto.p2_moves.extend(self.p2_moves)
+
+        for move in self.p1_moves:
+            p = game_proto.p1_moves.add()
+            p.first, p.second = move
+
+        for move in self.p2_moves:
+            p = game_proto.p2_moves.add()
+            p.first, p.second = move
+
+
+        # game_proto.p1_moves.extend(self.p1_moves)
+        # game_proto.p2_moves.extend(self.p2_moves)
         return game_proto.SerializeToString()
 
     def deserialize(self, data):
@@ -67,8 +77,8 @@ class Game:
         self.result = list(game_proto.result)
         self.rand_num = game_proto.rand_num if game_proto.rand_num != 0 else None
         self.start_counter = game_proto.start_counter
-        self.p1_moves = list(game_proto.p1_moves)
-        self.p2_moves = list(game_proto.p2_moves)
+        self.p1_moves = [(p.first, p.second) for p in game_proto.p1_moves]
+        self.p2_moves = [(p.first, p.second) for p in game_proto.p2_moves]
             
             
 
