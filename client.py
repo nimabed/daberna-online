@@ -6,12 +6,12 @@ pygame.init()
 clock = pygame.time.Clock()
 
 class Rects:
-    def __init__(self, x, y, text):
+    def __init__(self, x, y, width, height, text):
         self.x = x
         self.y = y
         self.text = text
-        self.width = 70
-        self.height = 70
+        self.width = width
+        self.height = height
 
     def draw(self, win):
         font = pygame.font.SysFont(None, 25)
@@ -33,19 +33,33 @@ class Rects:
 class Client:
     def __init__(self, ip, port, cards_num):
         # Network setup
+        self.cards_num = cards_num
         self.net = Network(ip, port)
         self.p_id = self.net.get_p()
-        self.net.send(str(cards_num))
+        self.net.send(str(self.cards_num))
         
-        # Games variable
+        # Games variables
         self.cards = None
         self.game_rects = None
         self.get_pos = None
         self.marked_rects = []
+        if self.cards_num == 1:
+            self.width = 790
+            self.height = 600
+            self.rect_size = 70
+            self.offset_x = (80,)
+            self.offset_y = (45,345)
+        elif self.cards_num == 2:
+            self.width = 1250
+            self.height = 600
+            self.rect_size = 60
+            self.offset_x = (80,60*9+90)
+            self.offset_y = (60,360)
+
         
         # Window setup
-        self.width = 800
-        self.height = 600
+        # self.width = 800
+        # self.height = 600
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption('Daberna')
 
@@ -57,36 +71,34 @@ class Client:
         text = self.game_font.render("Waiting for connections....", 1, (0,0,0))
         text_rect = text.get_rect(center=(self.width/2, self.height/2))
         self.screen.blit(text, text_rect)
-
-    def get_cards(self):
-        return self.net.send("ready")
                 
     def cards_rects(self):
-        game_rects = []
+        
+        game_rects_dict = {}
+
         for player, card in self.cards.items():
-            if player == 1:
-                offset_y = 45
-            else:
-                offset_y = 345
-            game_rects.append(self.generate_rects(card[0], offset_y))
-        return game_rects
+            game_rects_list = []
+            for i in range(len(card)):
+                game_rects_list.append(self.generate_rects(card[i], self.offset_x[i], self.offset_y[player-1]))
+            game_rects_dict[player] = game_rects_list
+        return game_rects_dict
                
-    def generate_rects(self, list, offset_y):
+    def generate_rects(self, list, offset_x, offset_y):
         rect_card = []
         for row in range(9):
             for col in range(3):
-                x = 85 + row * 70
-                y = offset_y + col * 70
-                rect_card.append(Rects(x, y, list[row][col]))
+                x = offset_x + row * self.rect_size
+                y = offset_y + col * self.rect_size
+                rect_card.append(Rects(x, y, self.rect_size, self.rect_size, list[row][col]))
         return rect_card
             
     def rect_check(self, number):
-        # self.screen.fill((255,255,255))
         if self.get_pos:
-            for rect in self.game_rects[self.p_id-1]:
-                if rect.clicked(self.get_pos) and rect.text == str(number):
-                    self.marked_rects.append(rect)
-                    self.net.send(rect.text)
+            for i in range(len(self.game_rects[self.p_id])):
+                for rect in self.game_rects[self.p_id][i]:
+                    if rect.clicked(self.get_pos) and rect.text == str(number):
+                        self.marked_rects.append(rect)
+                        self.net.send(f"{rect.text},{i}")
 
     def get_game(self, tries):
         counter = 0
@@ -120,10 +132,11 @@ class Client:
         
     def draw_rects(self):
         self.draw_player_label()
-        for rects in self.game_rects:
-            for rect in rects:
-                rect.draw(self.screen)
+        for i in range(len(self.game_rects)):
+            for all_rects in self.game_rects[i+1]:
+                [rect.draw(self.screen) for rect in [rects for rects in all_rects]]
 
+    
     def draw_marked_rects(self):
         if self.marked_rects:
             for rect in self.marked_rects:
@@ -132,14 +145,16 @@ class Client:
     def draw_opponent_moves(self):
         if game.p1_moves or game.p2_moves:
             if self.p_id == 1:
-                rect_l = self.game_rects[1]
+                rect_l = self.game_rects[2]
                 opponent_moves = game.p2_moves
             else:
-                rect_l = self.game_rects[0]
+                rect_l = self.game_rects[1]
                 opponent_moves = game.p1_moves
-            for rect in rect_l:
-                if rect.text in opponent_moves:
-                    rect.draw_lines(self.screen)
+            for index, card in enumerate(rect_l):
+                for rect in card:
+                    if (rect.text,str(index)) in opponent_moves:
+                        rect.draw_lines(self.screen)
+                
 
     def draw_result(self):
         if game.result[0] and game.result[1]:
@@ -204,7 +219,7 @@ class Client:
             self.draw_opponent_moves()
             
                
-client = Client("192.168.1.9", 9999, 1)
+client = Client("192.168.1.9", 9999, 2)
 
     
 while True:
