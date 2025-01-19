@@ -26,21 +26,14 @@ class Game:
         else:
             self.p2_moves.append(tuple(number.split(",")))
 
-    def winner_check(self, p_id, card):
-        if p_id == 1:
-            check_list = self.p1_moves
-        else:
-            check_list = self.p2_moves
-        for col in range(3):
-            matched = 0
-            temp = []
-            for row in range(9):
-                temp.append(card[row][col])
-                if card[row][col] in check_list:
-                    matched += 1
-            if matched == sum([1 for i in temp if i.isdigit()]):
-                self.result[p_id-1] = 1
-                return
+    def winner_check(self, p_id, cards):
+        check_list = self.p1_moves if p_id == 1 else self.p2_moves
+
+        for index, card in enumerate(cards):
+            for i in range(3):
+                if [True for item in card if item[i].isdigit()] == [True for item in card if (item[i], str(index)) in check_list]:
+                    self.result[p_id-1] = 1
+                    return 
             
     def serialize(self):
         game_proto = game_pb2.Game()
@@ -61,9 +54,6 @@ class Game:
             p = game_proto.p2_moves.add()
             p.first, p.second = move
 
-
-        # game_proto.p1_moves.extend(self.p1_moves)
-        # game_proto.p2_moves.extend(self.p2_moves)
         return game_proto.SerializeToString()
 
     def deserialize(self, data):

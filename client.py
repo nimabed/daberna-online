@@ -43,12 +43,14 @@ class Client:
         self.game_rects = None
         self.get_pos = None
         self.marked_rects = []
+
         if self.cards_num == 1:
             self.width = 790
             self.height = 600
             self.rect_size = 70
             self.offset_x = (80,)
             self.offset_y = (45,345)
+
         elif self.cards_num == 2:
             self.width = 1250
             self.height = 600
@@ -56,10 +58,7 @@ class Client:
             self.offset_x = (80,60*9+90)
             self.offset_y = (60,360)
 
-        
-        # Window setup
-        # self.width = 800
-        # self.height = 600
+        # Screen
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption('Daberna')
 
@@ -73,7 +72,6 @@ class Client:
         self.screen.blit(text, text_rect)
                 
     def cards_rects(self):
-        
         game_rects_dict = {}
 
         for player, card in self.cards.items():
@@ -136,7 +134,6 @@ class Client:
             for all_rects in self.game_rects[i+1]:
                 [rect.draw(self.screen) for rect in [rects for rects in all_rects]]
 
-    
     def draw_marked_rects(self):
         if self.marked_rects:
             for rect in self.marked_rects:
@@ -155,7 +152,6 @@ class Client:
                     if (rect.text,str(index)) in opponent_moves:
                         rect.draw_lines(self.screen)
                 
-
     def draw_result(self):
         if game.result[0] and game.result[1]:
             text = self.game_font.render("Game is tie", 1, (0,255,0))

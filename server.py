@@ -38,7 +38,7 @@ def random_numbers(game, clients):
             num = random.choice(numbers)
             game.rand_num = num
             numbers.remove(num)
-            for _ in range(5):
+            for _ in range(8):
                 if game.result[0] or game.result[1]:
                     game.rand_num = None
                     return
@@ -63,7 +63,7 @@ def active_client(connection, player, game):
         
                 if data != "get":
                     game.player_move(player, data)
-                    # game.winner_check(player, players_cards[player][0])
+                    game.winner_check(player, players_cards[player])
 
                 else:
                     serialized_game = game.serialize()
