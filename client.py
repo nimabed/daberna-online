@@ -53,24 +53,24 @@ class Client:
 
         elif self.cards_num == 2:
             self.width = 1250
-            self.height = 600
+            self.height = 520
             self.rect_size = 60
-            self.offset_x = (80,60*9+90)
-            self.offset_y = ((60,),(360,))
+            self.offset_x = (70,60*9+100)
+            self.offset_y = ((40,),(300,))
 
         elif self.cards_num == 3:
             self.width = 1250
             self.height = 940
             self.rect_size = 60
-            self.offset_x = (80, 60*9+90, 80+270)
-            self.offset_y = ((50,240),(520,710))
+            self.offset_x = (70, 60*9+100, int(self.width/2)-270)
+            self.offset_y = ((40,250),(510,720))
 
         else:
             self.width = 1250
             self.height = 940
             self.rect_size = 60
-            self.offset_x = (80, 60*9+90, 80, 60*9+90)
-            self.offset_y = ((50,240),(520,710))
+            self.offset_x = (70, 60*9+100, 70, 60*9+100)
+            self.offset_y = ((40,250),(510,720))
 
         # Screen
         self.screen = pygame.display.set_mode((self.width, self.height))
@@ -229,7 +229,7 @@ class Client:
             self.draw_opponent_moves()
             
                
-client = Client("192.168.1.9", 9999, 4)
+client = Client("192.168.1.9", 9999, 1)
 
     
 while True:
