@@ -128,12 +128,12 @@ class Client:
             you_text = self.game_font.render("You", 1, (255,0,0))
             you_text_rect = you_text.get_rect(topleft=(10,10))
             opponent_text = self.game_font.render("Opponent", 1, (255,0,0))
-            opponent_text_rect = opponent_text.get_rect(topleft=(10,310))
+            opponent_text_rect = opponent_text.get_rect(topleft=(10,self.height/2+10))
             self.screen.blit(you_text, you_text_rect)
             self.screen.blit(opponent_text, opponent_text_rect)
         else:
             you_text = self.game_font.render("You", 1, (255,0,0))
-            you_text_rect = you_text.get_rect(topleft=(10,310))
+            you_text_rect = you_text.get_rect(topleft=(10,self.height/2+10))
             opponent_text = self.game_font.render("Opponent", 1, (255,0,0))
             opponent_text_rect = opponent_text.get_rect(topleft=(10,10))
             self.screen.blit(you_text, you_text_rect)
@@ -229,7 +229,7 @@ class Client:
             self.draw_opponent_moves()
             
                
-client = Client("192.168.1.9", 9999, 2)
+client = Client("192.168.1.9", 9999, 4)
 
     
 while True:
