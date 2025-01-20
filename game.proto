@@ -14,6 +14,7 @@ message Game {
     repeated int32 result = 6; 
     int32 rand_num = 7; 
     int32 start_counter = 8;
-    repeated Tuple p1_moves = 9; 
-    repeated Tuple p2_moves = 10; 
+    int32 random_num_counter = 9;
+    repeated Tuple p1_moves = 10; 
+    repeated Tuple p2_moves = 11; 
 }

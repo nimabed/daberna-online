@@ -10,6 +10,7 @@ class Game:
         self.result = [0,0]
         self.rand_num = None
         self.start_counter = 4
+        self.random_num_counter = 5
         self.p1_moves = []
         self.p2_moves = []
             
@@ -45,6 +46,7 @@ class Game:
         game_proto.result.extend(self.result)
         game_proto.rand_num = self.rand_num if self.rand_num is not None else 0
         game_proto.start_counter = self.start_counter
+        game_proto.random_num_counter = self.random_num_counter
 
         for move in self.p1_moves:
             p = game_proto.p1_moves.add()
@@ -67,6 +69,7 @@ class Game:
         self.result = list(game_proto.result)
         self.rand_num = game_proto.rand_num if game_proto.rand_num != 0 else None
         self.start_counter = game_proto.start_counter
+        self.random_num_counter = game_proto.random_num_counter
         self.p1_moves = [(p.first, p.second) for p in game_proto.p1_moves]
         self.p2_moves = [(p.first, p.second) for p in game_proto.p2_moves]
             

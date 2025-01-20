@@ -192,10 +192,13 @@ class Client:
             text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
             self.screen.blit(text, text_rect)        
 
-    def draw_random_num(self, number):
-        text = self.game_font.render(str(number), 1, (255,0,0))
-        text_rect = text.get_rect(midbottom=(self.width/2, self.height/2))
-        self.screen.blit(text, text_rect)
+    def draw_random_num(self, number, timer):
+        text_num = self.game_font.render(str(number), 1, (255,0,0))
+        text_timer = self.game_font.render(f"Timer: {timer+1}", 1, (0,0,0))
+        text_num_rect = text_num.get_rect(midbottom=(self.width/2, self.height/2))
+        text_timer_rect = text_timer.get_rect(midbottom=(self.width-100,self.height/2))
+        self.screen.blit(text_num, text_num_rect)
+        self.screen.blit(text_timer, text_timer_rect)
 
     def draw_start_counter(self, counter):
         text1 = self.game_font.render(f"Starting in ", 1, (0,0,0))
@@ -221,7 +224,7 @@ class Client:
         else:
             self.draw_rects()
             if game.rand_num:
-                self.draw_random_num(game.rand_num)
+                self.draw_random_num(game.rand_num, game.random_num_counter)
                 self.rect_check(game.rand_num)
             else:
                 self.draw_result()

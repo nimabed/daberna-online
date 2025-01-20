@@ -1,4 +1,4 @@
-import socket, pickle, random, time, hashlib, struct
+import socket, pickle, random, time, hashlib, struct, copy
 from _thread import *
 from gctl import Game
 
@@ -33,16 +33,19 @@ def random_numbers(game, clients):
             print("Can not send players cards!")
             return
 
+    copy_counter = game.random_num_counter
     while True:
         if game.running:
             num = random.choice(numbers)
             game.rand_num = num
             numbers.remove(num)
-            for _ in range(7):
+            for i in range(copy_counter):
+                game.random_num_counter -= 1
                 if game.result[0] or game.result[1]:
                     game.rand_num = None
                     return
                 time.sleep(1)
+            game.random_num_counter = copy_counter
         else:
             game.start_counter -= 1
             time.sleep(2)
