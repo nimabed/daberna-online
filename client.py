@@ -49,14 +49,28 @@ class Client:
             self.height = 600
             self.rect_size = 70
             self.offset_x = (80,)
-            self.offset_y = (45,345)
+            self.offset_y = ((45,),(345,))
 
         elif self.cards_num == 2:
             self.width = 1250
             self.height = 600
             self.rect_size = 60
             self.offset_x = (80,60*9+90)
-            self.offset_y = (60,360)
+            self.offset_y = ((60,),(360,))
+
+        elif self.cards_num == 3:
+            self.width = 1250
+            self.height = 940
+            self.rect_size = 60
+            self.offset_x = (80, 60*9+90, 80+270)
+            self.offset_y = ((50,240),(520,710))
+
+        else:
+            self.width = 1250
+            self.height = 940
+            self.rect_size = 60
+            self.offset_x = (80, 60*9+90, 80, 60*9+90)
+            self.offset_y = ((50,240),(520,710))
 
         # Screen
         self.screen = pygame.display.set_mode((self.width, self.height))
@@ -77,7 +91,7 @@ class Client:
         for player, card in self.cards.items():
             game_rects_list = []
             for i in range(len(card)):
-                game_rects_list.append(self.generate_rects(card[i], self.offset_x[i], self.offset_y[player-1]))
+                game_rects_list.append(self.generate_rects(card[i], self.offset_x[i], self.offset_y[player-1][1 if i >=2 else 0]))
             game_rects_dict[player] = game_rects_list
         return game_rects_dict
                
