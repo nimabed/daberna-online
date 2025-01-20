@@ -38,7 +38,7 @@ def random_numbers(game, clients):
             num = random.choice(numbers)
             game.rand_num = num
             numbers.remove(num)
-            for _ in range(8):
+            for _ in range(7):
                 if game.result[0] or game.result[1]:
                     game.rand_num = None
                     return
