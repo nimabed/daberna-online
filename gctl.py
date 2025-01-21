@@ -10,7 +10,7 @@ class Game:
         self.result = [0,0]
         self.rand_num = None
         self.start_counter = 4
-        self.random_num_counter = 8
+        self.random_num_counter = 6
         self.p1_moves = []
         self.p2_moves = []
             
@@ -23,10 +23,6 @@ class Game:
     
     def player_move(self, p_id, number):
         self.p1_moves.append(tuple(number.split(","))) if p_id == 1 else self.p2_moves.append(tuple(number.split(",")))
-        # if p_id == 1:
-        #     self.p1_moves.append(tuple(number.split(",")))
-        # else:
-        #     self.p2_moves.append(tuple(number.split(",")))
 
     def winner_check(self, p_id, cards):
         check_list = self.p1_moves if p_id == 1 else self.p2_moves

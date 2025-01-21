@@ -232,7 +232,7 @@ class Client:
             self.draw_opponent_moves()
             
                
-client = Client("192.168.1.9", 9999, 1)
+client = Client("192.168.1.9", 9999, 4)
 
     
 while True:
