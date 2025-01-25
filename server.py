@@ -23,7 +23,7 @@ class Server:
         card = []
         for i in range(9):
             card.append(random.sample(range(1 + i*10, 11 + i*10), 3))
-        for _ in range(15):
+        for _ in range(10):
             card[random.randint(0,8)][random.randint(0,2)] = "*"
         return [[str(item) for item in row]for row in card]
     
@@ -96,10 +96,10 @@ class Server:
         while True:
             conn, addr = self.server.accept()
             player += 1
-            self.clients.append(conn)
             conn.send(str(player).encode())
+            self.clients.append(conn)
             print(f"Player {player} with address {addr} added!")
-
+            
             try:
                 data = conn.recv(1024)
                 if not data:

@@ -14,7 +14,7 @@ class Rects:
         self.height = height
 
     def draw(self, win):
-        font = pygame.font.SysFont(None, 25)
+        font = pygame.font.SysFont("Lato Black", 30)
         pygame.draw.rect(win, (0,0,255), (self.x, self.y, self.width, self.height), 2)
         num = font.render(self.text, 1, (0,0,0))
         win.blit(num, (self.x + self.width/2 - num.get_width()/2, self.y + self.height/2 - num.get_height()/2))
@@ -77,8 +77,8 @@ class Client:
         pygame.display.set_caption('Daberna')
 
         # Font setup
-        self.game_font = pygame.font.SysFont(None, 40)
-        self.font_in_rect = pygame.font.SysFont(None, 25)
+        self.game_font = pygame.font.SysFont("FreeSerif", 35)
+        self.random_num_font = pygame.font.SysFont("Lato Black", 55)
 
     def ready_state(self):
         text = self.game_font.render("Waiting for connections....", 1, (0,0,0))
@@ -168,32 +168,32 @@ class Client:
                 
     def draw_result(self):
         if game.result[0] and game.result[1]:
-            text = self.game_font.render("Game is tie", 1, (0,255,0))
+            text = self.game_font.render("Game is tie", 1, (0,200,0))
             text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
             self.screen.blit(text, text_rect)
 
         elif self.p_id == 1 and game.result[0] and not game.result[1]:
-            text = self.game_font.render("You Win", 1, (0,255,0))
+            text = self.game_font.render("You Win", 1, (0,200,0))
             text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
             self.screen.blit(text, text_rect)
 
         elif self.p_id == 1 and not game.result[0] and game.result[1]:
-            text = self.game_font.render("You Lose", 1, (0,255,0))
+            text = self.game_font.render("You Lose", 1, (0,200,0))
             text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
             self.screen.blit(text, text_rect)
 
         elif self.p_id == 2 and game.result[0] and not game.result[1]:
-            text = self.game_font.render("You Lose", 1, (0,255,0))
+            text = self.game_font.render("You Lose", 1, (0,200,0))
             text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
             self.screen.blit(text, text_rect)
 
         elif self.p_id == 2 and not game.result[0] and game.result[1]:
-            text = self.game_font.render("You Win", 1, (0,255,0))
+            text = self.game_font.render("You Win", 1, (0,200,0))
             text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
             self.screen.blit(text, text_rect)        
 
     def draw_random_num(self, number, timer):
-        text_num = self.game_font.render(str(number), 1, (255,0,0))
+        text_num = self.random_num_font.render(str(number), 1, (255,0,0))
         text_timer = self.game_font.render(f"Timer: {timer+1}", 1, (0,0,0))
         text_num_rect = text_num.get_rect(midbottom=(self.width/2, self.height/2))
         text_timer_rect = text_timer.get_rect(midbottom=(self.width-100,self.height/2))
