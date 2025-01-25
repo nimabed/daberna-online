@@ -4,7 +4,7 @@ from gctl import Game
 
 
 class Server:
-    def __init__(self, host, port):
+    def __init__(self, host, port, players):
         self.host = host
         self.port = port 
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -14,7 +14,8 @@ class Server:
             print(f"Binding error: {e}")
 
         # Variables
-        self.game = Game()
+        self.players = players
+        self.game = Game(players)
         self.numbers = [i for i in range(1,91)]
         self.players_cards = {}
         self.clients = []
@@ -45,7 +46,7 @@ class Server:
                 self.numbers.remove(num)
                 for i in range(copy_counter):
                     self.game.random_num_counter -= 1
-                    if self.game.result[0] or self.game.result[1]:
+                    if 1 in self.game.result:
                         self.game.rand_num = None
                         return
                     time.sleep(1)
@@ -76,29 +77,28 @@ class Server:
                         message_bytes = checksum.encode()+serialized_game
                         message_length = len(message_bytes) 
                         connection.sendall(struct.pack("I", message_length))
-                        connection.sendall(message_bytes)
-                                
+                        connection.sendall(message_bytes)            
             except:
                 pass
         
-        if player == 1: self.game.p1 = False
-        else: self.game.p2 = False
+        self.game.players[player] = False
         self.game.running = False
         connection.close()
         print("Connection close!")
 
     def run(self):
-        player = 0
+        p_id = -1
 
-        self.server.listen(2)
+        self.server.listen(self.players)
         print("listening...")
 
         while True:
             conn, addr = self.server.accept()
-            player += 1
-            conn.send(str(player).encode())
+            p_id += 1
+            conn.send(str(p_id).encode())
             self.clients.append(conn)
-            print(f"Player {player} with address {addr} added!")
+            self.game.players[p_id] = True
+            print(f"Player {p_id} with address {addr} added!")
             
             try:
                 data = conn.recv(1024)
@@ -107,19 +107,18 @@ class Server:
                     break
                 else:
                     cards_number = data.decode()
-                    self.players_cards[player] = [self.generate_card() for _ in range(int(cards_number))]
+                    self.players_cards[p_id] = [self.generate_card() for _ in range(int(cards_number))]
             except:
                 pass
 
-            if player == 2:
-                self.game.p1, self.game.p2 = True, True
+            if self.game.all_connected():
                 start_new_thread(self.random_numbers, ())
 
-            start_new_thread(self.active_client, (conn, player))
+            start_new_thread(self.active_client, (conn, p_id))
 
 
 if __name__ == "__main__":
-    server = Server("192.168.1.9", 9999)
+    server = Server("192.168.1.9", 9999, 2)
     server.run()
 
 

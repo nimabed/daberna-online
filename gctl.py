@@ -1,19 +1,21 @@
 import game_pb2
 
 class Game:
-    def __init__(self):
-        self.p1 = False
-        self.p2 = False
-        self.p1_ready = False
-        self.p2_ready = False
+    def __init__(self, num_of_players):
+        self.players = [False for i in range(num_of_players)]
+        self.moves = [[] for i in range(num_of_players)]
+        self.result = [0 for i in range(num_of_players)]
         self.running = False
-        self.result = [0,0]
         self.rand_num = None
         self.start_counter = 4
         self.random_num_counter = 6
-        self.p1_moves = []
-        self.p2_moves = []
-            
+        # self.p2 = False
+        # self.p1_ready = False
+        # self.p2_ready = False
+        # self.p2_moves = []
+
+    def all_connected(self):
+        return all(self.players)   
 
     def both_connected(self):
         return self.p1 and self.p2
@@ -22,15 +24,15 @@ class Game:
         return self.p1_ready and self.p2_ready
     
     def player_move(self, p_id, number):
-        self.p1_moves.append(tuple(number.split(","))) if p_id == 1 else self.p2_moves.append(tuple(number.split(",")))
+        self.moves[p_id].append(tuple(number.split(",")))
 
     def winner_check(self, p_id, cards):
-        check_list = self.p1_moves if p_id == 1 else self.p2_moves
+        check_list = self.moves[p_id]
 
         for index, card in enumerate(cards):
             for i in range(3):
                 if [True for item in card if item[i].isdigit()] == [True for item in card if (item[i], str(index)) in check_list]:
-                    self.result[p_id-1] = 1
+                    self.result[p_id] = 1
                     return 
             
     def serialize(self):
