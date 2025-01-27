@@ -91,7 +91,7 @@ class Client:
         for player, card in self.cards.items():
             game_rects_list = []
             for i in range(len(card)):
-                game_rects_list.append(self.generate_rects(card[i], self.offset_x[i], self.offset_y[player-1][1 if i >=2 else 0]))
+                game_rects_list.append(self.generate_rects(card[i], self.offset_x[i], self.offset_y[player][1 if i >=2 else 0]))
             game_rects_dict[player] = game_rects_list
         return game_rects_dict
                
@@ -124,7 +124,7 @@ class Client:
 
     def draw_player_label(self):
         pygame.draw.line(self.screen, (0,0,0), (0,self.height/2), (self.width, self.height/2), 2)
-        if self.p_id == 1:
+        if not self.p_id:
             you_text = self.game_font.render("You", 1, (255,0,0))
             you_text_rect = you_text.get_rect(topleft=(10,10))
             opponent_text = self.game_font.render("Opponent", 1, (255,0,0))
@@ -145,7 +145,7 @@ class Client:
     def draw_rects(self):
         self.draw_player_label()
         for i in range(len(self.game_rects)):
-            for all_rects in self.game_rects[i+1]:
+            for all_rects in self.game_rects[i]:
                 [rect.draw(self.screen) for rect in [rects for rects in all_rects]]
 
     def draw_marked_rects(self):
@@ -154,43 +154,47 @@ class Client:
                 rect.draw_lines(self.screen)
 
     def draw_opponent_moves(self):
-        if game.p1_moves or game.p2_moves:
-            if self.p_id == 1:
-                rect_l = self.game_rects[2]
-                opponent_moves = game.p2_moves
-            else:
-                rect_l = self.game_rects[1]
-                opponent_moves = game.p1_moves
-            for index, card in enumerate(rect_l):
-                for rect in card:
-                    if (rect.text,str(index)) in opponent_moves:
-                        rect.draw_lines(self.screen)
+        for player, all_player_cards in self.game_rects.items():
+            if player != self.p_id and game.moves[player]:
+                [rect.draw_lines(self.screen) for rect_list in all_player_cards for rect in rect_list if (rect.text, str(all_player_cards.index(rect_list))) in game.moves[player]] 
                 
     def draw_result(self):
-        if game.result[0] and game.result[1]:
+        if game.result.count(1) == 1:
+            idx = game.result.index(1)
+            if idx == self.p_id:
+                text = self.game_font.render("You win", 1, (0,200,0))
+            else:
+                text = self.game_font.render("You lose", 1, (0,200,0))
+            text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
+            self.screen.blit(text, text_rect)
+        elif game.result.count(1) > 1:
             text = self.game_font.render("Game is tie", 1, (0,200,0))
             text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
             self.screen.blit(text, text_rect)
+        # if game.result[0] and game.result[1]:
+        #     text = self.game_font.render("Game is tie", 1, (0,200,0))
+        #     text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
+        #     self.screen.blit(text, text_rect)
 
-        elif self.p_id == 1 and game.result[0] and not game.result[1]:
-            text = self.game_font.render("You Win", 1, (0,200,0))
-            text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
-            self.screen.blit(text, text_rect)
+        # elif self.p_id == 1 and game.result[0] and not game.result[1]:
+        #     text = self.game_font.render("You Win", 1, (0,200,0))
+        #     text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
+        #     self.screen.blit(text, text_rect)
 
-        elif self.p_id == 1 and not game.result[0] and game.result[1]:
-            text = self.game_font.render("You Lose", 1, (0,200,0))
-            text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
-            self.screen.blit(text, text_rect)
+        # elif self.p_id == 1 and not game.result[0] and game.result[1]:
+        #     text = self.game_font.render("You Lose", 1, (0,200,0))
+        #     text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
+        #     self.screen.blit(text, text_rect)
 
-        elif self.p_id == 2 and game.result[0] and not game.result[1]:
-            text = self.game_font.render("You Lose", 1, (0,200,0))
-            text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
-            self.screen.blit(text, text_rect)
+        # elif self.p_id == 2 and game.result[0] and not game.result[1]:
+        #     text = self.game_font.render("You Lose", 1, (0,200,0))
+        #     text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
+        #     self.screen.blit(text, text_rect)
 
-        elif self.p_id == 2 and not game.result[0] and game.result[1]:
-            text = self.game_font.render("You Win", 1, (0,200,0))
-            text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
-            self.screen.blit(text, text_rect)        
+        # elif self.p_id == 2 and not game.result[0] and game.result[1]:
+        #     text = self.game_font.render("You Win", 1, (0,200,0))
+        #     text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
+        #     self.screen.blit(text, text_rect)        
 
     def draw_random_num(self, number, timer):
         text_num = self.random_num_font.render(str(number), 1, (255,0,0))
@@ -211,10 +215,10 @@ class Client:
         self.screen.blit(merged_surface, merged_surface_rect)
 
     def run(self, game):
-        if not game.both_connected():
+        if not game.all_connected():
             self.draw_ready()
 
-        elif game.both_connected and not game.running:
+        elif game.all_connected and not game.running:
             if not self.cards:
                 self.cards = self.net.receive_cards()
                 self.game_rects = self.cards_rects()

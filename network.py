@@ -53,7 +53,7 @@ class Network:
             elif data == "get":
                 data_recv = self.received_all()
                 if data_recv and self.check_seri(data_recv):
-                    game = Game()
+                    game = Game(2)
                     game.deserialize(data_recv[64:])
                     return game
                 else:

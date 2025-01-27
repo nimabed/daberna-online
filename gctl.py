@@ -8,7 +8,7 @@ class Game:
         self.running = False
         self.rand_num = None
         self.start_counter = 4
-        self.random_num_counter = 6
+        self.random_num_counter = 15
 
 
     def all_connected(self):
