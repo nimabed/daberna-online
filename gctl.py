@@ -9,19 +9,11 @@ class Game:
         self.rand_num = None
         self.start_counter = 4
         self.random_num_counter = 6
-        # self.p2 = False
-        # self.p1_ready = False
-        # self.p2_ready = False
-        # self.p2_moves = []
+
 
     def all_connected(self):
         return all(self.players)   
 
-    def both_connected(self):
-        return self.p1 and self.p2
-
-    def both_ready(self):
-        return self.p1_ready and self.p2_ready
     
     def player_move(self, p_id, number):
         self.moves[p_id].append(tuple(number.split(",")))
@@ -37,40 +29,33 @@ class Game:
             
     def serialize(self):
         game_proto = game_pb2.Game()
-        game_proto.p1 = self.p1
-        game_proto.p2 = self.p2
-        game_proto.p1_ready = self.p1_ready
-        game_proto.p2_ready = self.p2_ready
-        game_proto.running = self.running
+        game_proto.players.extend(self.players)
+        for move_list in self.moves:
+            move_list_proto = game_pb2.MovesList()
+            for move in move_list:
+                move_proto = game_pb2.Tuple()
+                move_proto.first, move_proto.second = move
+                move_list_proto.move.append(move_proto)
+            game_proto.moves.append(move_list_proto)
         game_proto.result.extend(self.result)
+        game_proto.running = self.running
         game_proto.rand_num = self.rand_num if self.rand_num is not None else 0
         game_proto.start_counter = self.start_counter
         game_proto.random_num_counter = self.random_num_counter
-
-        for move in self.p1_moves:
-            p = game_proto.p1_moves.add()
-            p.first, p.second = move
-
-        for move in self.p2_moves:
-            p = game_proto.p2_moves.add()
-            p.first, p.second = move
 
         return game_proto.SerializeToString()
 
     def deserialize(self, data):
         game_proto = game_pb2.Game()
         game_proto.ParseFromString(data)
-        self.p1 = game_proto.p1
-        self.p2 = game_proto.p2
-        self.p1_ready = game_proto.p1_ready
-        self.p2_ready = game_proto.p2_ready
-        self.running = game_proto.running
+        self.players = list(game_proto.players)
+        self.moves = [[(move.first,move.second) for move in move_list.move]for move_list in game_proto.moves]
         self.result = list(game_proto.result)
+        self.running = game_proto.running
         self.rand_num = game_proto.rand_num if game_proto.rand_num != 0 else None
         self.start_counter = game_proto.start_counter
         self.random_num_counter = game_proto.random_num_counter
-        self.p1_moves = [(p.first, p.second) for p in game_proto.p1_moves]
-        self.p2_moves = [(p.first, p.second) for p in game_proto.p2_moves]
+        
             
             
 

@@ -5,16 +5,16 @@ message Tuple {
     string second = 2;
 }
 
-message Game {
-    bool p1 = 1; 
-    bool p2 = 2; 
-    bool p1_ready = 3; 
-    bool p2_ready = 4; 
-    bool running = 5; 
-    repeated int32 result = 6; 
-    int32 rand_num = 7; 
-    int32 start_counter = 8;
-    int32 random_num_counter = 9;
-    repeated Tuple p1_moves = 10; 
-    repeated Tuple p2_moves = 11; 
+message MovesList {
+    repeated Tuple move = 1;
+}
+
+message Game { 
+    repeated bool players = 1;
+    repeated MovesList moves = 2;
+    repeated int32 result = 3;
+    bool running = 4; 
+    int32 rand_num = 5; 
+    int32 start_counter = 6;
+    int32 random_num_counter = 7;
 }

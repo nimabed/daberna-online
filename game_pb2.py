@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ngame.proto\"&\n\x05Tuple\x12\r\n\x05\x66irst\x18\x01 \x01(\t\x12\x0e\n\x06second\x18\x02 \x01(\t\"\xdc\x01\n\x04Game\x12\n\n\x02p1\x18\x01 \x01(\x08\x12\n\n\x02p2\x18\x02 \x01(\x08\x12\x10\n\x08p1_ready\x18\x03 \x01(\x08\x12\x10\n\x08p2_ready\x18\x04 \x01(\x08\x12\x0f\n\x07running\x18\x05 \x01(\x08\x12\x0e\n\x06result\x18\x06 \x03(\x05\x12\x10\n\x08rand_num\x18\x07 \x01(\x05\x12\x15\n\rstart_counter\x18\x08 \x01(\x05\x12\x1a\n\x12random_num_counter\x18\t \x01(\x05\x12\x18\n\x08p1_moves\x18\n \x03(\x0b\x32\x06.Tuple\x12\x18\n\x08p2_moves\x18\x0b \x03(\x0b\x32\x06.Tupleb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ngame.proto\"&\n\x05Tuple\x12\r\n\x05\x66irst\x18\x01 \x01(\t\x12\x0e\n\x06second\x18\x02 \x01(\t\"!\n\tMovesList\x12\x14\n\x04move\x18\x01 \x03(\x0b\x32\x06.Tuple\"\x98\x01\n\x04Game\x12\x0f\n\x07players\x18\x01 \x03(\x08\x12\x19\n\x05moves\x18\x02 \x03(\x0b\x32\n.MovesList\x12\x0e\n\x06result\x18\x03 \x03(\x05\x12\x0f\n\x07running\x18\x04 \x01(\x08\x12\x10\n\x08rand_num\x18\x05 \x01(\x05\x12\x15\n\rstart_counter\x18\x06 \x01(\x05\x12\x1a\n\x12random_num_counter\x18\x07 \x01(\x05\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'game_pb2', globals())
@@ -22,6 +22,8 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._options = None
   _TUPLE._serialized_start=14
   _TUPLE._serialized_end=52
-  _GAME._serialized_start=55
-  _GAME._serialized_end=275
+  _MOVESLIST._serialized_start=54
+  _MOVESLIST._serialized_end=87
+  _GAME._serialized_start=90
+  _GAME._serialized_end=242
 # @@protoc_insertion_point(module_scope)
