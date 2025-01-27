@@ -31,12 +31,13 @@ class Rects:
 
 
 class Client:
-    def __init__(self, ip, port, cards_num):
+    def __init__(self, ip, port, name, cards_num):
         # Network setup
         self.cards_num = cards_num
+        self.name = name
         self.net = Network(ip, port)
         self.p_id = self.net.get_p()
-        self.net.send(str(self.cards_num))
+        self.net.send(f"{self.name}:{self.cards_num}")
         
         # Games variables
         self.cards = None
@@ -125,17 +126,21 @@ class Client:
     def draw_player_label(self):
         pygame.draw.line(self.screen, (0,0,0), (0,self.height/2), (self.width, self.height/2), 2)
         if not self.p_id:
-            you_text = self.game_font.render("You", 1, (255,0,0))
-            you_text_rect = you_text.get_rect(topleft=(10,10))
-            opponent_text = self.game_font.render("Opponent", 1, (255,0,0))
-            opponent_text_rect = opponent_text.get_rect(topleft=(10,self.height/2+10))
+            value1 = game.players[self.p_id]
+            value2 = game.players[self.p_id+1]
+            you_text = self.game_font.render(value1, 1, (255,0,0))
+            you_text_rect = you_text.get_rect(topleft=(10,5))
+            opponent_text = self.game_font.render(value2, 1, (255,0,0))
+            opponent_text_rect = opponent_text.get_rect(topleft=(10,self.height/2+5))
             self.screen.blit(you_text, you_text_rect)
             self.screen.blit(opponent_text, opponent_text_rect)
         else:
-            you_text = self.game_font.render("You", 1, (255,0,0))
-            you_text_rect = you_text.get_rect(topleft=(10,self.height/2+10))
-            opponent_text = self.game_font.render("Opponent", 1, (255,0,0))
-            opponent_text_rect = opponent_text.get_rect(topleft=(10,10))
+            value1 = game.players[self.p_id]
+            value2 = game.players[self.p_id-1]
+            you_text = self.game_font.render(value1, 1, (255,0,0))
+            you_text_rect = you_text.get_rect(topleft=(10,self.height/2+5))
+            opponent_text = self.game_font.render(value2, 1, (255,0,0))
+            opponent_text_rect = opponent_text.get_rect(topleft=(10,5))
             self.screen.blit(you_text, you_text_rect)
             self.screen.blit(opponent_text, opponent_text_rect)
 
@@ -171,30 +176,7 @@ class Client:
             text = self.game_font.render("Game is tie", 1, (0,200,0))
             text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
             self.screen.blit(text, text_rect)
-        # if game.result[0] and game.result[1]:
-        #     text = self.game_font.render("Game is tie", 1, (0,200,0))
-        #     text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
-        #     self.screen.blit(text, text_rect)
-
-        # elif self.p_id == 1 and game.result[0] and not game.result[1]:
-        #     text = self.game_font.render("You Win", 1, (0,200,0))
-        #     text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
-        #     self.screen.blit(text, text_rect)
-
-        # elif self.p_id == 1 and not game.result[0] and game.result[1]:
-        #     text = self.game_font.render("You Lose", 1, (0,200,0))
-        #     text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
-        #     self.screen.blit(text, text_rect)
-
-        # elif self.p_id == 2 and game.result[0] and not game.result[1]:
-        #     text = self.game_font.render("You Lose", 1, (0,200,0))
-        #     text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
-        #     self.screen.blit(text, text_rect)
-
-        # elif self.p_id == 2 and not game.result[0] and game.result[1]:
-        #     text = self.game_font.render("You Win", 1, (0,200,0))
-        #     text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
-        #     self.screen.blit(text, text_rect)        
+               
 
     def draw_random_num(self, number, timer):
         text_num = self.random_num_font.render(str(number), 1, (255,0,0))
@@ -234,9 +216,10 @@ class Client:
                 self.draw_result()
             self.draw_marked_rects()
             self.draw_opponent_moves()
-            
+
+user_name = input("Enter your name: ")            
                
-client = Client("192.168.1.9", 9999, 4)
+client = Client("192.168.1.9", 9999, user_name, 2)
 
     
 while True:

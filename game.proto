@@ -10,7 +10,7 @@ message MovesList {
 }
 
 message Game { 
-    repeated bool players = 1;
+    repeated string players = 1;
     repeated MovesList moves = 2;
     repeated int32 result = 3;
     bool running = 4; 

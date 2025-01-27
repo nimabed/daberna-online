@@ -97,7 +97,7 @@ class Server:
             p_id += 1
             conn.send(str(p_id).encode())
             self.clients.append(conn)
-            self.game.players[p_id] = True
+            # self.game.players[p_id] = True
             print(f"Player {p_id} with address {addr} added!")
             
             try:
@@ -106,7 +106,8 @@ class Server:
                     print("Could not receive number of cards!")
                     break
                 else:
-                    cards_number = data.decode()
+                    name, cards_number = data.decode().split(":")
+                    self.game.players[p_id] = name
                     self.players_cards[p_id] = [self.generate_card() for _ in range(int(cards_number))]
             except:
                 pass

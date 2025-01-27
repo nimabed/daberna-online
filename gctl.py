@@ -2,13 +2,13 @@ import game_pb2
 
 class Game:
     def __init__(self, num_of_players):
-        self.players = [False for i in range(num_of_players)]
+        self.players = ["" for i in range(num_of_players)]
         self.moves = [[] for i in range(num_of_players)]
         self.result = [0 for i in range(num_of_players)]
         self.running = False
         self.rand_num = None
         self.start_counter = 4
-        self.random_num_counter = 15
+        self.random_num_counter = 7
 
 
     def all_connected(self):
