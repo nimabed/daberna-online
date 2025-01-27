@@ -169,7 +169,7 @@ class Client:
             if idx == self.p_id:
                 text = self.game_font.render("You win", 1, (0,200,0))
             else:
-                text = self.game_font.render("You lose", 1, (0,200,0))
+                text = self.game_font.render(f"{game.players[idx]} win", 1, (0,200,0))
             text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
             self.screen.blit(text, text_rect)
         elif game.result.count(1) > 1:
