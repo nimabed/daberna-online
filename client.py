@@ -109,19 +109,30 @@ class Client:
         game_rects_dict = {}
 
         for player, card in self.cards.items():
-            game_rects_list = []
+            player_rects_list = []
+            # offset_y = ((40,250),(710,780))
+            if player == self.p_id:
+                rect_size = 60
+                font_size = 30
+                offset_x = (70, 60*9+100, 70, 60*9+100, 70, 60*9+100)
+                offset_y = (40, 40, 250 ,250, 460, 460)
+            else:
+                rect_size = 20
+                font_size = 10
+                offset_x = (40, 230, 40, 230, 40, 230)
+                offset_y = (710, 710, 780, 780, 850, 850)
             for i in range(len(card)):
-                game_rects_list.append(self.generate_rects(card[i], self.offset_x[i], self.offset_y[player][1 if i >=2 else 0]))
-            game_rects_dict[player] = game_rects_list
+                player_rects_list.append(self.generate_rects(card[i], offset_x[i], offset_y[i], font_size, rect_size))
+            game_rects_dict[player] = player_rects_list
         return game_rects_dict
                
-    def generate_rects(self, list, offset_x, offset_y):
+    def generate_rects(self, list, offset_x, offset_y, font_size, rect_size):
         rect_card = []
         for row in range(9):
             for col in range(3):
-                x = offset_x + row * self.rect_size
-                y = offset_y + col * self.rect_size
-                rect_card.append(Rects(x, y, self.rect_size, self.rect_size, list[row][col]))
+                x = offset_x + row * rect_size
+                y = offset_y + col * rect_size
+                rect_card.append(Rects(x, y, rect_size, rect_size, list[row][col], font_size))
         return rect_card
             
     def rect_check(self, number):
