@@ -153,35 +153,42 @@ class Client:
                 counter += 1
         raise ValueError("Could not get game object")
 
+    def draw_separate_lines(self):
+        pygame.draw.line(self.screen, (0,0,0), (0,680), (self.width, 680), 2)
+
+        if self.number_of_players == 3:
+            pygame.draw.line(self.screen, (0,0,0), (self.width/2, 680), (self.width/2, self.height), 2)
+
+        elif self.number_of_players == 4:
+            for i in range(1,3):
+                pygame.draw.line(self.screen, (0,0,0), ((self.width/3)*i, 680), ((self.width/3)*i, self.height), 2)
+
+        elif self.number_of_players == 5:
+            for i in range(1,4):
+                pygame.draw.line(self.screen, (0,0,0), ((self.width/4)*i, 680), ((self.width/4)*i, self.height), 2)
+
     def draw_player_label(self):
-        pygame.draw.line(self.screen, (0,0,0), (0,self.height/2), (self.width, self.height/2), 2)
-        if not self.p_id:
-            value1 = game.players[self.p_id]
-            value2 = game.players[self.p_id+1]
-            you_text = self.game_font.render(value1, 1, (255,0,0))
-            you_text_rect = you_text.get_rect(topleft=(10,5))
-            opponent_text = self.game_font.render(value2, 1, (255,0,0))
-            opponent_text_rect = opponent_text.get_rect(topleft=(10,self.height/2+5))
-            self.screen.blit(you_text, you_text_rect)
-            self.screen.blit(opponent_text, opponent_text_rect)
-        else:
-            value1 = game.players[self.p_id]
-            value2 = game.players[self.p_id-1]
-            you_text = self.game_font.render(value1, 1, (255,0,0))
-            you_text_rect = you_text.get_rect(topleft=(10,self.height/2+5))
-            opponent_text = self.game_font.render(value2, 1, (255,0,0))
-            opponent_text_rect = opponent_text.get_rect(topleft=(10,5))
-            self.screen.blit(you_text, you_text_rect)
-            self.screen.blit(opponent_text, opponent_text_rect)
+        for i in range(len(game.players)):
+            if i == self.p_id:
+                text = self.game_font.render(game.players[i], 1, (250,0,0))
+                text_rect = text.get_rect(midtop=(self.width/2,5))
+            else:
+                text = self.opponent_font.render(game.players[i], 1, (250,0,0))
+                text_rect = text.get_rect(midtop=(175,685))  
+            self.screen.blit(text, text_rect)      
+        
 
     def draw_ready(self):
         self.ready_state()
         
     def draw_rects(self):
         self.draw_player_label()
-        for i in range(len(self.game_rects)):
-            for all_rects in self.game_rects[i]:
-                [rect.draw(self.screen) for rect in [rects for rects in all_rects]]
+        self.draw_seperate_lines()
+        for player, cards in self.game_rects.items():
+            if player == self.p_id:
+                [rect.draw_player(self.screen) for rects in cards for rect in rects]
+            else:
+                [rect.draw_opponent(self.screen) for rects in cards for rect in rects]
 
     def draw_marked_rects(self):
         if self.marked_rects:
@@ -191,7 +198,7 @@ class Client:
     def draw_opponent_moves(self):
         for player, all_player_cards in self.game_rects.items():
             if player != self.p_id and game.moves[player]:
-                [rect.draw_lines(self.screen) for rect_list in all_player_cards for rect in rect_list if (rect.text, str(all_player_cards.index(rect_list))) in game.moves[player]] 
+                [rect.fill_rect(self.screen) for rect_list in all_player_cards for rect in rect_list if (rect.text, str(all_player_cards.index(rect_list))) in game.moves[player]] 
                 
     def draw_result(self):
         if game.result.count(1) == 1:
