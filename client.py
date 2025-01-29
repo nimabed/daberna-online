@@ -61,35 +61,6 @@ class Client:
         self.marked_rects = []
 
         # Screen
-        # if self.cards_num == 1:
-        #     # self.width = 790
-        #     # self.height = 600
-        #     # self.rect_size = 70
-        #     self.offset_x = (80,)
-        #     self.offset_y = ((45,),(345,))
-
-        # elif self.cards_num == 2:
-        #     # self.width = 1250
-        #     # self.height = 520
-        #     # self.rect_size = 60
-        #     self.offset_x = (70,60*9+100)
-        #     self.offset_y = ((40,),(300,))
-
-        # elif self.cards_num == 3:
-        #     # self.width = 1250
-        #     # self.height = 940
-        #     # self.rect_size = 60
-        #     self.offset_x = (70, 60*9+100, int(self.width/2)-270)
-        #     self.offset_y = ((40,250),(510,720))
-
-        # else:
-        #     # self.width = 1250
-        #     # self.height = 940
-        #     # self.rect_size = 60
-        #     self.offset_x = (70, 60*9+100, 70, 60*9+100)
-        #     self.offset_y = ((40,250),(510,720))
-
-
         self.width = 1248
         self.height = 940
         self.screen = pygame.display.set_mode((self.width, self.height))
@@ -214,7 +185,6 @@ class Client:
             text_rect = text.get_rect(midbottom=(self.width/2,self.height/2))
             self.screen.blit(text, text_rect)
                
-
     def draw_random_num(self, number, timer):
         text_num = self.random_num_font.render(str(number), 1, (255,0,0))
         text_timer = self.game_font.render(f"Timer: {timer+1}", 1, (0,0,0))
@@ -256,7 +226,7 @@ class Client:
 
 user_name = input("Enter your name: ")            
                
-client = Client("192.168.1.9", 9999, user_name, 2)
+client = Client("192.168.1.9", 9999, user_name, 6)
 
     
 while True:

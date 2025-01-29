@@ -4,7 +4,7 @@ from gctl import Game
 
 
 class Server:
-    def __init__(self, host, port, players):
+    def __init__(self, host, port, num_of_players):
         self.host = host
         self.port = port 
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -14,8 +14,8 @@ class Server:
             print(f"Binding error: {e}")
 
         # Variables
-        self.players = players
-        self.game = Game(players)
+        self.players = num_of_players
+        self.game = Game(num_of_players)
         self.numbers = [i for i in range(1,91)]
         self.players_cards = {}
         self.clients = []
@@ -95,7 +95,7 @@ class Server:
         while True:
             conn, addr = self.server.accept()
             p_id += 1
-            conn.send(str(p_id).encode())
+            conn.send(f"{p_id}:{self.players}".encode())
             self.clients.append(conn)
             # self.game.players[p_id] = True
             print(f"Player {p_id} with address {addr} added!")
@@ -119,7 +119,7 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server("192.168.1.9", 9999, 2)
+    server = Server("192.168.1.9", 9999, 5)
     server.run()
 
 
