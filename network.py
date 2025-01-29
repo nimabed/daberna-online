@@ -8,13 +8,16 @@ class Network:
         self.port = port
         self.player = self.connect()
 
-    def get_p(self):
-        return int(self.player)
+    def get_p_id(self):
+        return int(self.player[0])
+
+    def get_num_of_p(self):
+        return int(self.player[1])
 
     def connect(self):
         try:
             self.client.connect((self.ip, self.port))
-            return self.client.recv(1024).decode()
+            return self.client.recv(1024).decode().split(":")
         except socket.error as e:
             print(f"Connection error: {e}")
 
@@ -65,5 +68,5 @@ class Network:
             print(f"Sending error: {e}")
 
     def receive_cards(self):
-        return pickle.loads(self.client.recv(4096))
+        return pickle.loads(self.client.recv(4096*5))
                    
