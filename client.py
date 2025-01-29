@@ -39,14 +39,19 @@ class Rects:
         pygame.draw.line(win, (255,0,0), (self.x+10, self.y+10), (self.x+self.width-10, self.y+self.height-10), 3)
         pygame.draw.line(win, (255,0,0), (self.x+self.width-10,self.y+10), (self.x+10, self.y+self.height-10), 3) 
 
+    def fill_rect(self, win):
+        pygame.draw.rect(win, (0,240,0), (self.x, self.y, self.width, self.height))
+
 
 class Client:
     def __init__(self, ip, port, name, cards_num):
+
         # Network setup
         self.cards_num = cards_num
         self.name = name
         self.net = Network(ip, port)
-        self.p_id = self.net.get_p()
+        self.p_id = self.net.get_p_id()
+        self.number_of_players = self.net.get_num_of_p()
         self.net.send(f"{self.name}:{self.cards_num}")
         
         # Games variables
@@ -55,40 +60,44 @@ class Client:
         self.get_pos = None
         self.marked_rects = []
 
-        if self.cards_num == 1:
-            self.width = 790
-            self.height = 600
-            self.rect_size = 70
-            self.offset_x = (80,)
-            self.offset_y = ((45,),(345,))
-
-        elif self.cards_num == 2:
-            self.width = 1250
-            self.height = 520
-            self.rect_size = 60
-            self.offset_x = (70,60*9+100)
-            self.offset_y = ((40,),(300,))
-
-        elif self.cards_num == 3:
-            self.width = 1250
-            self.height = 940
-            self.rect_size = 60
-            self.offset_x = (70, 60*9+100, int(self.width/2)-270)
-            self.offset_y = ((40,250),(510,720))
-
-        else:
-            self.width = 1250
-            self.height = 940
-            self.rect_size = 60
-            self.offset_x = (70, 60*9+100, 70, 60*9+100)
-            self.offset_y = ((40,250),(510,720))
-
         # Screen
+        # if self.cards_num == 1:
+        #     # self.width = 790
+        #     # self.height = 600
+        #     # self.rect_size = 70
+        #     self.offset_x = (80,)
+        #     self.offset_y = ((45,),(345,))
+
+        # elif self.cards_num == 2:
+        #     # self.width = 1250
+        #     # self.height = 520
+        #     # self.rect_size = 60
+        #     self.offset_x = (70,60*9+100)
+        #     self.offset_y = ((40,),(300,))
+
+        # elif self.cards_num == 3:
+        #     # self.width = 1250
+        #     # self.height = 940
+        #     # self.rect_size = 60
+        #     self.offset_x = (70, 60*9+100, int(self.width/2)-270)
+        #     self.offset_y = ((40,250),(510,720))
+
+        # else:
+        #     # self.width = 1250
+        #     # self.height = 940
+        #     # self.rect_size = 60
+        #     self.offset_x = (70, 60*9+100, 70, 60*9+100)
+        #     self.offset_y = ((40,250),(510,720))
+
+
+        self.width = 1248
+        self.height = 940
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption('Daberna')
 
         # Font setup
         self.game_font = pygame.font.SysFont("FreeSerif", 35)
+        self.opponent_font = pygame.font.SysFont("FreeSerif", 25)
         self.random_num_font = pygame.font.SysFont("Lato Black", 55)
 
     def ready_state(self):
