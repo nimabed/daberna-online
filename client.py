@@ -261,7 +261,7 @@ class Client:
 
 user_name = input("Enter your name: ")            
                
-client = Client("192.168.1.9", 9999, user_name, 4)
+client = Client("192.168.1.9", 9999, user_name, 6)
 
     
 while True:
