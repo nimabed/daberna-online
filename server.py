@@ -30,11 +30,18 @@ class Server:
     
     def random_numbers(self):
         copy_counter = self.game.random_num_counter
+        players_cards_bytes = self.game.serialize_cards(self.players_cards)
+        checksum_cards = hashlib.sha256(players_cards_bytes).hexdigest()
+        message_bytes = checksum_cards.encode()+players_cards_bytes
+        message_length = len(message_bytes)
     
         time.sleep(0.2)
         for client in self.clients:
             try:
-                client.sendall(pickle.dumps(self.players_cards))
+                client.sendall(struct.pack("I", message_length))
+                client.sendall(message_bytes)
+                time.sleep(0.1)
+                # client.sendall(pickle.dumps(self.players_cards))
             except:
                 print("Can not send players cards!")
                 return
@@ -97,7 +104,6 @@ class Server:
             p_id += 1
             conn.send(f"{p_id}:{self.players}".encode())
             self.clients.append(conn)
-            # self.game.players[p_id] = True
             print(f"Player {p_id} with address {addr} added!")
             
             try:
@@ -119,7 +125,7 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server("192.168.1.9", 9999, 5)
+    server = Server("192.168.1.9", 9999, 4)
     server.run()
 
 
