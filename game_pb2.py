@@ -13,17 +13,29 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ngame.proto\"&\n\x05Tuple\x12\r\n\x05\x66irst\x18\x01 \x01(\t\x12\x0e\n\x06second\x18\x02 \x01(\t\"!\n\tMovesList\x12\x14\n\x04move\x18\x01 \x03(\x0b\x32\x06.Tuple\"\x98\x01\n\x04Game\x12\x0f\n\x07players\x18\x01 \x03(\t\x12\x19\n\x05moves\x18\x02 \x03(\x0b\x32\n.MovesList\x12\x0e\n\x06result\x18\x03 \x03(\x05\x12\x0f\n\x07running\x18\x04 \x01(\x08\x12\x10\n\x08rand_num\x18\x05 \x01(\x05\x12\x15\n\rstart_counter\x18\x06 \x01(\x05\x12\x1a\n\x12random_num_counter\x18\x07 \x01(\x05\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ngame.proto\"\x1c\n\nInnerInner\x12\x0e\n\x06values\x18\x01 \x03(\t\"\'\n\tInnerList\x12\x1a\n\x05lists\x18\x01 \x03(\x0b\x32\x0b.InnerInner\"&\n\tOuterList\x12\x19\n\x05\x63\x61rds\x18\x01 \x03(\x0b\x32\n.InnerList\"t\n\tDictCards\x12*\n\x08gamedict\x18\x01 \x03(\x0b\x32\x18.DictCards.GamedictEntry\x1a;\n\rGamedictEntry\x12\x0b\n\x03key\x18\x01 \x01(\x05\x12\x19\n\x05value\x18\x02 \x01(\x0b\x32\n.OuterList:\x02\x38\x01\"&\n\x05Tuple\x12\r\n\x05\x66irst\x18\x01 \x01(\t\x12\x0e\n\x06second\x18\x02 \x01(\t\"!\n\tMovesList\x12\x14\n\x04move\x18\x01 \x03(\x0b\x32\x06.Tuple\"\x98\x01\n\x04Game\x12\x0f\n\x07players\x18\x01 \x03(\t\x12\x19\n\x05moves\x18\x02 \x03(\x0b\x32\n.MovesList\x12\x0e\n\x06result\x18\x03 \x03(\x05\x12\x0f\n\x07running\x18\x04 \x01(\x08\x12\x10\n\x08rand_num\x18\x05 \x01(\x05\x12\x15\n\rstart_counter\x18\x06 \x01(\x05\x12\x1a\n\x12random_num_counter\x18\x07 \x01(\x05\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'game_pb2', globals())
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  _TUPLE._serialized_start=14
-  _TUPLE._serialized_end=52
-  _MOVESLIST._serialized_start=54
-  _MOVESLIST._serialized_end=87
-  _GAME._serialized_start=90
-  _GAME._serialized_end=242
+  _DICTCARDS_GAMEDICTENTRY._options = None
+  _DICTCARDS_GAMEDICTENTRY._serialized_options = b'8\001'
+  _INNERINNER._serialized_start=14
+  _INNERINNER._serialized_end=42
+  _INNERLIST._serialized_start=44
+  _INNERLIST._serialized_end=83
+  _OUTERLIST._serialized_start=85
+  _OUTERLIST._serialized_end=123
+  _DICTCARDS._serialized_start=125
+  _DICTCARDS._serialized_end=241
+  _DICTCARDS_GAMEDICTENTRY._serialized_start=182
+  _DICTCARDS_GAMEDICTENTRY._serialized_end=241
+  _TUPLE._serialized_start=243
+  _TUPLE._serialized_end=281
+  _MOVESLIST._serialized_start=283
+  _MOVESLIST._serialized_end=316
+  _GAME._serialized_start=319
+  _GAME._serialized_end=471
 # @@protoc_insertion_point(module_scope)

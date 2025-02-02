@@ -1,5 +1,23 @@
 syntax = "proto3"; 
 
+message InnerInner {
+    repeated string values = 1;
+}
+
+message InnerList {
+    repeated InnerInner lists = 1;
+}
+
+message OuterList {
+    repeated InnerList cards = 1;
+}
+
+
+message DictCards {
+    map<int32, OuterList> gamedict = 1;
+}
+
+
 message Tuple {
     string first = 1;
     string second = 2;
