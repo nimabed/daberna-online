@@ -55,6 +55,39 @@ class Game:
         self.rand_num = game_proto.rand_num if game_proto.rand_num != 0 else None
         self.start_counter = game_proto.start_counter
         self.random_num_counter = game_proto.random_num_counter
+
+    def serialize_cards(self, the_dict):
+        proto_dict = game_pb2.DictCards()
+
+        for player, cards in the_dict.items():
+            proto_cards = game_pb2.OuterList()
+            for card in cards:
+                proto_card = game_pb2.InnerList()
+                for item in card:
+                    proto_item = game_pb2.InnerInner()
+                    proto_item.values.extend(item)
+                    proto_card.lists.append(proto_item)
+                proto_cards.cards.append(proto_card)
+            proto_dict.gamedict[player].CopyFrom(proto_cards)
+
+        return proto_dict.SerializeToString()
+    
+    def deserialize_cards(self, serialized_data):
+        proto_dict = game_pb2.DictCards()
+        proto_dict.ParseFromString(serialized_data)
+
+        deserialized_dict = {}
+        for player, cards in proto_dict.gamedict.items():
+            deserialized_dict[player] = []
+            for innerlist in cards.cards:
+                inner = []
+                for item in innerlist.lists:
+                    inner.append(list(item.values))
+                deserialized_dict[player].append(inner)
+
+        return deserialized_dict
+
+
         
             
             
