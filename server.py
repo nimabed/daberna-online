@@ -1,4 +1,4 @@
-import socket, pickle, random, time, hashlib, struct
+import socket, random, time, hashlib, struct
 from _thread import *
 from gctl import Game
 
@@ -40,8 +40,6 @@ class Server:
             try:
                 client.sendall(struct.pack("I", message_length))
                 client.sendall(message_bytes)
-                time.sleep(0.1)
-                # client.sendall(pickle.dumps(self.players_cards))
             except:
                 print("Can not send players cards!")
                 return
@@ -125,7 +123,7 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server("192.168.1.9", 9999, 3)
+    server = Server("192.168.1.9", 9999, 5)
     server.run()
 
 
