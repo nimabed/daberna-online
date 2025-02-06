@@ -60,6 +60,9 @@ class Client:
         self.game_rects = None
         self.get_pos = None
         self.marked_rects = []
+        self.result_visible = False
+        self.flash_period = 1000
+        self.last_time = pygame.time.get_ticks()
 
         # Screen
         self.width = 1248
@@ -188,7 +191,17 @@ class Client:
         for player, all_player_cards in self.game_rects.items():
             if player != self.p_id and game.moves[player]:
                 [rect.fill_rect(self.screen) for rect_list in all_player_cards for rect in rect_list if (rect.text, str(all_player_cards.index(rect_list))) in game.moves[player]] 
-                
+
+    def flash_result(self, text):
+        current_time = pygame.time.get_ticks()
+        if current_time - self.last_time > self.flash_period:
+            self.result_visible = not self.result_visible
+            self.last_time = pygame.time.get_ticks()
+
+        if self.result_visible:
+            self.screen.blit(text, (15, 432))
+            self.screen.blit(text, (self.width-text.get_width()-15, 432))
+
     def draw_result(self):
         if game.result.count(1) == 1:
             idx = game.result.index(1)
@@ -196,12 +209,11 @@ class Client:
                 text = self.game_font.render("You win", 1, (0,200,0))
             else:
                 text = self.game_font.render(f"{game.players[idx]} wins", 1, (0,200,0))
-            text_rect = text.get_rect(bottomleft=(10, 462))
-            self.screen.blit(text, text_rect)
+        
         elif game.result.count(1) > 1:
             text = self.game_font.render("Game is tie", 1, (0,200,0))
-            text_rect = text.get_rect(bottomleft=(10, 462))
-            self.screen.blit(text, text_rect)
+
+        self.flash_result(text)
                
     def draw_random_num(self, number, timer):
         text_num = self.random_num_font.render(str(number), 1, (255,0,0))
@@ -245,7 +257,7 @@ class Client:
 
 user_name = input("Enter your name: ")            
             
-client = Client("192.168.1.9", 9999, user_name, 6)
+client = Client("192.168.26.210", 9999, user_name, 2)
 
     
 while True:

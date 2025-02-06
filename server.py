@@ -123,7 +123,7 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server("192.168.1.9", 9999, 5)
+    server = Server("192.168.26.210", 9999, 2)
     server.run()
 
 
