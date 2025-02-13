@@ -1,5 +1,6 @@
 import socket, random, time, hashlib, struct
 from _thread import *
+
 from gctl import Game
 
 
@@ -123,7 +124,7 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server("192.168.26.210", 9999, 2)
+    server = Server("192.168.1.6", 9999, 2)
     server.run()
 
 

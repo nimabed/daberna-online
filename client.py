@@ -1,4 +1,7 @@
-import pygame, sys
+import sys
+
+import pygame
+
 from setting import *
 from network import Network
 
@@ -199,8 +202,8 @@ class Client:
             self.last_time = pygame.time.get_ticks()
 
         if self.result_visible:
-            self.screen.blit(text, (15, 432))
-            self.screen.blit(text, (self.width-text.get_width()-15, 432))
+            self.screen.blit(text, (20, 432))
+            self.screen.blit(text, (self.width-text.get_width()-20, 432))
 
     def draw_result(self):
         if game.result.count(1) == 1:
@@ -257,7 +260,7 @@ class Client:
 
 user_name = input("Enter your name: ")            
             
-client = Client("192.168.26.210", 9999, user_name, 2)
+client = Client("192.168.1.6", 9999, user_name, 6)
 
     
 while True:

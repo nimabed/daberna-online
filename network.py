@@ -1,4 +1,4 @@
-import socket, pickle, hashlib, struct
+import socket, hashlib, struct
 from gctl import Game
 
 class Network:
@@ -51,10 +51,10 @@ class Network:
         try:
             self.client.send(data.encode())
 
-            if data == "ready":
-                return pickle.loads(self.client.recv(4096))
+            # if data == "ready":
+            #     return pickle.loads(self.client.recv(4096))
             
-            elif data == "get":
+            if data == "get":
                 data_recv = self.received_all()
                 if data_recv and self.check_seri(data_recv):
                     # game = Game(2)
