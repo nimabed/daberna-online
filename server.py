@@ -17,9 +17,10 @@ class Server:
         # Variables
         self.players = num_of_players
         self.game = Game(num_of_players)
-        self.numbers = [i for i in range(1,91)]
+        # self.numbers = [i for i in range(1,91)]
         self.players_cards = {}
         self.clients = []
+        self.try_var = 0
 
     def generate_card(self):
         card = []
@@ -29,8 +30,13 @@ class Server:
             card[random.randint(0,8)][random.randint(0,2)] = "*"
         return [[str(item) for item in row]for row in card]
     
+    def retry_game(self):
+        if self.try_var == self.players and 1 in self.game.result:
+            self.game.reset()
+
+    
     def random_numbers(self):
-        copy_counter = self.game.random_num_counter
+        
         players_cards_bytes = self.game.serialize_cards(self.players_cards)
         checksum_cards = hashlib.sha256(players_cards_bytes).hexdigest()
         message_bytes = checksum_cards.encode()+players_cards_bytes
@@ -45,23 +51,29 @@ class Server:
                 print("Can not send players cards!")
                 return
 
+        copy_counter = self.game.random_num_counter
         while True:
             if self.game.running:
-                num = random.choice(self.numbers)
+                num = random.choice(numbers)
                 self.game.rand_num = num
-                self.numbers.remove(num)
+                numbers.remove(num)
                 for i in range(copy_counter):
                     self.game.random_num_counter -= 1
                     if 1 in self.game.result:
                         self.game.rand_num = None
-                        return
+                        self.game.running = False
+                        break
+                        
                     time.sleep(1)
                 self.game.random_num_counter = copy_counter
-            else:
+            elif self.try_var == self.players:
+                self.retry_game()
                 self.game.start_counter -= 1
                 time.sleep(2)
                 if self.game.start_counter == 1:
+                    numbers = [_ for _ in range(1,91)]
                     self.game.running = True
+                    self.try_var = 0
 
     def active_client(self, connection, player):
         while True:
@@ -72,8 +84,11 @@ class Server:
                     break
                 else:
                     data = raw_data.decode()
-            
-                    if data != "get":
+
+                    if data == "retry":
+                        self.try_var += 1
+                        
+                    elif data != "get":
                         self.game.player_move(player, data)
                         self.game.winner_check(player, self.players_cards[player])
 
@@ -101,6 +116,7 @@ class Server:
         while True:
             conn, addr = self.server.accept()
             p_id += 1
+            self.try_var += 1
             conn.send(f"{p_id}:{self.players}".encode())
             self.clients.append(conn)
             print(f"Player {p_id} with address {addr} added!")
@@ -124,7 +140,7 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server("192.168.1.6", 9999, 2)
+    server = Server("192.168.219.210", 9999, 2)
     server.run()
 
 

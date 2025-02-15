@@ -62,6 +62,7 @@ class Client:
         self.cards = None
         self.game_rects = None
         self.get_pos = None
+        self.reset_button = False
         self.marked_rects = []
         self.result_visible = False
         self.flash_period = 1000
@@ -236,31 +237,53 @@ class Client:
         merged_surface_rect = merged_surface.get_rect(midbottom=(self.width-85, 462))
         self.screen.blit(merged_surface, merged_surface_rect)
 
+    def retry_request(self):
+        if not game.running and 1 in game.result and not self.reset_button:
+            client.net.send("retry")
+
+    def draw_retry(self):
+        if self.reset_button:
+            text = self.game_font.render("Waiting...", 1, (0,0,0))
+            self.screen.blit(text, (self.width-150, 100))
+        else:
+            text = "Press enter\nto RETRY..."
+            text_l = text.split("\n")
+            y = 100
+            for line in text_l:
+                text = self.game_font.render(line, 1, (0,0,0))
+                self.screen.blit(text, (self.width-150, y))
+                y += self.game_font.get_linesize()
+        # text_rect = text.get_rect(topleft=(self.width-text.get_width()-20, 100))
+        
+
     def run(self, game):
         if not game.all_connected():
             self.draw_ready()
 
-        elif game.all_connected and not game.running:
+        elif game.all_connected and not game.running and not 1 in game.result:
             if not self.cards:
                 self.cards = self.net.receive_cards()
                 self.game_rects = self.cards_rects()
+            self.marked_rects.clear()
             self.draw_rects()
             self.draw_start_counter(game.start_counter)
 
         else:
             self.draw_rects()
             if game.rand_num:
+                self.reset_button = False
                 self.draw_random_num(game.rand_num, game.random_num_counter)
                 self.rect_check(game.rand_num)
             else:
                 self.draw_result()
+                self.draw_retry()
             self.draw_marked_rects()
             self.draw_opponent_moves()
 
 
 user_name = input("Enter your name: ")            
             
-client = Client("192.168.1.6", 9999, user_name, 6)
+client = Client("192.168.219.210", 9999, user_name, 4)
 
     
 while True:
@@ -270,8 +293,13 @@ while True:
             pygame.quit()
             sys.exit()
 
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        elif event.type == pygame.MOUSEBUTTONDOWN:
             client.get_pos = pygame.mouse.get_pos()
+
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RETURN:
+                client.retry_request()
+                client.reset_button = True
         
     game = client.get_game(2)
 

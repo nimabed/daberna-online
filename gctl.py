@@ -5,16 +5,22 @@ class Game:
         self.players = ["" for i in range(num_of_players)]
         self.moves = [[] for i in range(num_of_players)]
         self.result = [0 for i in range(num_of_players)]
+        self.players_num = num_of_players
         self.running = False
         self.rand_num = None
         self.start_counter = 4
-        self.random_num_counter = 8
+        self.random_num_counter = 9
 
 
     def all_connected(self):
         return all(self.players)   
 
-    
+    # Added with NARENJAK! :-)
+    def reset(self):
+        self.moves = [[] for i in range(self.players_num)]
+        self.result = [0 for i in range(self.players_num)]
+        self.start_counter = 4
+        
     def player_move(self, p_id, number):
         self.moves[p_id].append(tuple(number.split(",")))
 
