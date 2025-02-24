@@ -1,50 +1,14 @@
-import sys
+import sys, threading
 
 import pygame
 
+from rects import Rects
 from setting import *
 from network import Network
 
 
 pygame.init()
 clock = pygame.time.Clock()
-
-class Rects:
-    def __init__(self, x, y, width, height, text, text_size):
-        self.x = x
-        self.y = y
-        self.text = text
-        self.width = width
-        self.height = height
-        self.font = pygame.font.SysFont("Lato Black", text_size)
-
-    def draw_player(self, win):
-        # font = pygame.font.SysFont("Lato Black", self.text_size)
-        pygame.draw.rect(win, (0,0,255), (self.x, self.y, self.width, self.height), 2)
-        num = self.font.render(self.text, 1, (0,0,0))
-        win.blit(num, (self.x + self.width/2 - num.get_width()/2, self.y + self.height/2 - num.get_height()/2))
-
-    def draw_opponent(self, win):
-        # font = pygame.font.SysFont("Lato Black", self.text_size)
-        if self.text == "*":
-            pygame.draw.rect(win, (0,0,255), (self.x, self.y, self.width, self.height))
-        else:
-            pygame.draw.rect(win, (0,0,255), (self.x, self.y, self.width, self.height), 2)
-            num = self.font.render(self.text, 1, (0,0,0))
-            win.blit(num, (self.x + self.width/2 - num.get_width()/2, self.y + self.height/2 - num.get_height()/2))
-    
-    def clicked(self, pos):
-        if (self.x <= pos[0] <= self.x + self.width) and (self.y <= pos[1]<= self.y + self.height):
-            return True
-        else:
-            return False
-
-    def draw_lines(self, win):
-        pygame.draw.line(win, (255,0,0), (self.x+10, self.y+10), (self.x+self.width-10, self.y+self.height-10), 3)
-        pygame.draw.line(win, (255,0,0), (self.x+self.width-10,self.y+10), (self.x+10, self.y+self.height-10), 3) 
-
-    def fill_rect(self, win):
-        pygame.draw.rect(win, (0,240,0), (self.x, self.y, self.width, self.height))
 
 
 class Client:
@@ -240,6 +204,7 @@ class Client:
     def retry_request(self):
         if not game.running and 1 in game.result and not self.reset_button:
             client.net.send("retry")
+            self.reset_button = True
 
     def draw_retry(self):
         if self.reset_button:
@@ -255,6 +220,28 @@ class Client:
                 y += self.game_font.get_linesize()
         # text_rect = text.get_rect(topleft=(self.width-text.get_width()-20, 100))
         
+    def reset_request(self):
+        if not game.running and 1 in game.result and not self.reset_button:
+            num = input("Write the number of cards you need then press enter(1 to 6): ")
+            if 1 <= int(num) <= 6:
+                self.cards_num = int(num)
+                client.net.send(num+"reset")
+                self.cards = None
+                # self.game_rects = None
+                self.reset_button = True
+
+    def draw_reset(self):
+        if self.reset_button:
+            text = self.game_font.render("Waiting...", 1, (0,0,0))
+            self.screen.blit(text, (20, 100))
+        else:
+            text = "Press space\nto RESET..."
+            text_l = text.split("\n")
+            y = 100
+            for line in text_l:
+                text = self.game_font.render(line, 1, (0,0,0))
+                self.screen.blit(text, (20, y))
+                y += self.game_font.get_linesize()
 
     def run(self, game):
         if not game.all_connected():
@@ -276,14 +263,15 @@ class Client:
                 self.rect_check(game.rand_num)
             else:
                 self.draw_result()
-                self.draw_retry()
+                # self.draw_retry()
+                self.draw_reset()
             self.draw_marked_rects()
             self.draw_opponent_moves()
 
 
 user_name = input("Enter your name: ")            
             
-client = Client("192.168.219.210", 9999, user_name, 4)
+client = Client("192.168.1.9", 9999, user_name, 4)
 
     
 while True:
@@ -299,7 +287,11 @@ while True:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN:
                 client.retry_request()
-                client.reset_button = True
+                
+            elif event.key == pygame.K_SPACE:
+                threading.Thread(target=client.reset_request).start()
+
+
         
     game = client.get_game(2)
 

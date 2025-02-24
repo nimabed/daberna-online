@@ -9,7 +9,7 @@ class Game:
         self.running = False
         self.rand_num = None
         self.start_counter = 4
-        self.random_num_counter = 9
+        self.random_num_counter = 10
 
 
     def all_connected(self):

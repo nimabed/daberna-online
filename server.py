@@ -1,5 +1,5 @@
 import socket, random, time, hashlib, struct
-from _thread import *
+import threading
 
 from gctl import Game
 
@@ -21,6 +21,7 @@ class Server:
         self.players_cards = {}
         self.clients = []
         self.try_var = 0
+        self.reset = True
 
     def generate_card(self):
         card = []
@@ -34,9 +35,7 @@ class Server:
         if self.try_var == self.players and 1 in self.game.result:
             self.game.reset()
 
-    
-    def random_numbers(self):
-        
+    def send_cards(self):
         players_cards_bytes = self.game.serialize_cards(self.players_cards)
         checksum_cards = hashlib.sha256(players_cards_bytes).hexdigest()
         message_bytes = checksum_cards.encode()+players_cards_bytes
@@ -49,10 +48,16 @@ class Server:
                 client.sendall(message_bytes)
             except:
                 print("Can not send players cards!")
-                return
+
+        self.reset = False
+
+    
+    def random_numbers(self):
+        # self.send_cards()
 
         copy_counter = self.game.random_num_counter
         while True:
+
             if self.game.running:
                 num = random.choice(numbers)
                 self.game.rand_num = num
@@ -62,12 +67,17 @@ class Server:
                     if 1 in self.game.result:
                         self.game.rand_num = None
                         self.game.running = False
+                        self.reset = True
                         break
-                        
                     time.sleep(1)
                 self.game.random_num_counter = copy_counter
+
             elif self.try_var == self.players:
                 self.retry_game()
+
+                if self.reset:
+                    self.send_cards()
+
                 self.game.start_counter -= 1
                 time.sleep(2)
                 if self.game.start_counter == 1:
@@ -87,6 +97,10 @@ class Server:
 
                     if data == "retry":
                         self.try_var += 1
+
+                    elif data[1:] == "reset":
+                        self.try_var += 1
+                        self.players_cards[player] = [self.generate_card() for _ in range(int(data[0]))]
                         
                     elif data != "get":
                         self.game.player_move(player, data)
@@ -134,13 +148,13 @@ class Server:
                 pass
 
             if self.game.all_connected():
-                start_new_thread(self.random_numbers, ())
+                threading.Thread(target=self.random_numbers).start()
 
-            start_new_thread(self.active_client, (conn, p_id))
+            threading.Thread(target=self.active_client, args=(conn,p_id)).start()
 
 
 if __name__ == "__main__":
-    server = Server("192.168.219.210", 9999, 2)
+    server = Server("192.168.1.9", 9999, 2)
     server.run()
 
 
