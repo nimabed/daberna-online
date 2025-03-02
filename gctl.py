@@ -35,7 +35,7 @@ class Game:
 
         for index, card in enumerate(cards):
             for i in range(3):
-                if all(item[i].isdigit() and (item[i], str(index)) in check_list for item in card):
+                if (1 if item[i].isdigit() else 0 for item in card) == (1 if item[i].isdigit() and (item[i],str(index)) in check_list else 0 for item in card):
                     self.result[p_id] = 1
                     return 
             

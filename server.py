@@ -93,6 +93,7 @@ class Server:
                         self.try_var = 0
 
     async def active_client(self, reader, writer, player):
+        # count_receive = 0
         while True:
             try:
                 raw_data = await reader.read(4096)
@@ -114,12 +115,13 @@ class Server:
                     elif data == "getcards":
                         await self.send_cards(writer)
                         
-                    elif data != "get":
+                    elif data.startswith("M"):
                         print(f"Player {player} moved --> {data}")
-                        await self.game.player_move(player, data)
+                        await self.game.player_move(player, data[1:])
                         await self.game.winner_check(player, self.players_cards[player])
 
                     else:
+                        # count_receive += 1
                         # async with self.lock:
                         serialized_game = await self.game.serialize()
                         checksum = hashlib.sha256(serialized_game).hexdigest()
@@ -128,7 +130,8 @@ class Server:
                         writer.write(struct.pack("I", message_length))
                         writer.write(message_bytes)
                         await writer.drain()
-                        # print(f"Game state sent to player {player}")        
+                        # print(f"Player:{player} // Data is {data} // RECEIVED:{count_receive}")
+
             except (asyncio.IncompleteReadError, BrokenPipeError) as e:
                 print(f"Error handling client {player}: {e}")
                 break

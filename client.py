@@ -100,7 +100,8 @@ class Client:
                 for rect in self.game_rects[self.p_id][i]:
                     if rect.clicked(self.get_pos) and rect.text == str(self.game_state.rand_num):
                         self.marked_rects.append(rect)
-                        await self.net.send(f"{rect.text},{i}")
+                        await self.net.send(f"M{rect.text},{i}")
+            self.get_pos = None
 
 
     def draw_separate_lines(self):
@@ -281,17 +282,19 @@ class Client:
 
 
     async def get_game(self):
-        # count = 0
+        # count_send = 0
+        # count_receive = 0
         while True:
             try:
                 game = await self.net.send_get("get")
+                # count_send += 1
                 if not game:
-                    print("Can not get game state!")
+                    # print("Can not get game state!")
                     break
                 else:
                     self.game_state = game
-                    # count += 1
-                    # print(f"Got game state {count}")
+                    # count_receive += 1
+                    # print(f"SENT:{count_send}  RECEIVED:{count_receive}")
                     
             except asyncio.IncompleteReadError as e:
                 print(f"Getting game state error: {e}")
