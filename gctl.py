@@ -1,39 +1,46 @@
+import asyncio
 import game_pb2
 
 class Game:
     def __init__(self, num_of_players):
-        self.players = ["" for i in range(num_of_players)]
-        self.moves = [[] for i in range(num_of_players)]
-        self.result = [0 for i in range(num_of_players)]
+        self.players = [""] * num_of_players
+        self.moves = [[]] * num_of_players
+        self.result = [0] * num_of_players
         self.players_num = num_of_players
         self.running = False
         self.rand_num = None
         self.start_counter = 4
         self.random_num_counter = 10
+        self.lock = asyncio.Lock()
 
 
-    def all_connected(self):
-        return all(self.players)   
+    async def all_connected(self):
+        async with self.lock:
+            return all(self.players)   
 
     # Added with NARENJAK! :-)
-    def reset(self):
-        self.moves = [[] for i in range(self.players_num)]
-        self.result = [0 for i in range(self.players_num)]
-        self.start_counter = 4
+    async def reset(self):
+        async with self.lock:
+            self.moves = [[]] * self.num_of_players
+            self.result = [0] * self.num_of_players
+            self.start_counter = 4
         
-    def player_move(self, p_id, number):
+    async def player_move(self, p_id, number):
+        # async with self.lock:
         self.moves[p_id].append(tuple(number.split(",")))
 
-    def winner_check(self, p_id, cards):
+    async def winner_check(self, p_id, cards):
+        # async with self.lock:
         check_list = self.moves[p_id]
 
         for index, card in enumerate(cards):
             for i in range(3):
-                if [True for item in card if item[i].isdigit()] == [True for item in card if (item[i], str(index)) in check_list]:
+                if all(item[i].isdigit() and (item[i], str(index)) in check_list for item in card):
                     self.result[p_id] = 1
                     return 
             
-    def serialize(self):
+    async def serialize(self):
+        # async with self.lock:
         game_proto = game_pb2.Game()
         game_proto.players.extend(self.players)
         for move_list in self.moves:
@@ -51,7 +58,8 @@ class Game:
 
         return game_proto.SerializeToString()
 
-    def deserialize(self, data):
+    async def deserialize(self, data):
+        # async with self.lock:
         game_proto = game_pb2.Game()
         game_proto.ParseFromString(data)
         self.players = list(game_proto.players)
@@ -62,36 +70,40 @@ class Game:
         self.start_counter = game_proto.start_counter
         self.random_num_counter = game_proto.random_num_counter
 
-    def serialize_cards(self, the_dict):
-        proto_dict = game_pb2.DictCards()
+    async def serialize_cards(self, the_dict):
+        async with self.lock:
+            proto_dict = game_pb2.DictCards()
 
-        for player, cards in the_dict.items():
-            proto_cards = game_pb2.OuterList()
-            for card in cards:
-                proto_card = game_pb2.InnerList()
-                for item in card:
-                    proto_item = game_pb2.InnerInner()
-                    proto_item.values.extend(item)
-                    proto_card.lists.append(proto_item)
-                proto_cards.cards.append(proto_card)
-            proto_dict.gamedict[player].CopyFrom(proto_cards)
+            for player, cards in the_dict.items():
+                proto_cards = game_pb2.OuterList()
+                for card in cards:
+                    proto_card = game_pb2.InnerList()
+                    for item in card:
+                        proto_item = game_pb2.InnerInner()
+                        proto_item.values.extend(item)
+                        proto_card.lists.append(proto_item)
+                    proto_cards.cards.append(proto_card)
+                proto_dict.gamedict[player].CopyFrom(proto_cards)
 
-        return proto_dict.SerializeToString()
+            return proto_dict.SerializeToString()
     
-    def deserialize_cards(self, serialized_data):
-        proto_dict = game_pb2.DictCards()
-        proto_dict.ParseFromString(serialized_data)
+    async def deserialize_cards(self, serialized_data):
+        async with self.lock:
+            proto_dict = game_pb2.DictCards()
+            proto_dict.ParseFromString(serialized_data)
 
-        deserialized_dict = {}
-        for player, cards in proto_dict.gamedict.items():
-            deserialized_dict[player] = []
-            for innerlist in cards.cards:
-                inner = []
-                for item in innerlist.lists:
-                    inner.append(list(item.values))
-                deserialized_dict[player].append(inner)
+            deserialized_dict = {}
+            for player, cards in proto_dict.gamedict.items():
+                deserialized_dict[player] = []
+                for innerlist in cards.cards:
+                    inner = [list(item.values) for item in innerlist.lists]
+                    deserialized_dict[player].append(inner)
+                    # inner = []
+                    # for item in innerlist.lists:
+                    #     inner.append(list(item.values))
+                
 
-        return deserialized_dict
+            return deserialized_dict
 
 
         
