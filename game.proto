@@ -32,7 +32,8 @@ message Game {
     repeated MovesList moves = 2;
     repeated int32 result = 3;
     bool running = 4; 
-    int32 rand_num = 5; 
-    int32 start_counter = 6;
-    int32 random_num_counter = 7;
+    bool reset_var = 5;
+    int32 rand_num = 6; 
+    int32 start_counter = 7;
+    int32 random_num_counter = 8;
 }

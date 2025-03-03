@@ -1,4 +1,4 @@
-import sys, threading
+import sys
 import asyncio
 import pygame
 
@@ -32,6 +32,7 @@ class Client:
         self.marked_rects = []
         self.result_visible = False
         self.flash_period = 1000
+        self.stop_event = asyncio.Event()
         self.last_time = pygame.time.get_ticks()
 
         # Screen
@@ -52,7 +53,6 @@ class Client:
         self.p_id = int(players_info[0])
         self.number_of_players = int(players_info[1])
         await self.net.send(f"{self.name}:{self.cards_num}")
-
 
     def ready_state(self):
         text = self.game_font.render("Waiting for connections....", 1, (0,0,0))
@@ -103,7 +103,6 @@ class Client:
                         await self.net.send(f"M{rect.text},{i}")
             self.get_pos = None
 
-
     def draw_separate_lines(self):
         pygame.draw.line(self.screen, (0,0,0), (0,472), (self.width, 472), 2)
 
@@ -122,9 +121,6 @@ class Client:
         self.ready_state()
         
     def draw_rects(self):
-        if not self.game_rects:
-            self.game_rects = self.cards_rects()
-
         self.draw_separate_lines()
         select = -1
         for player, cards in self.game_rects.items():
@@ -165,7 +161,7 @@ class Client:
             if player != self.p_id and self.game_state.moves[player]:
                 [rect.fill_rect(self.screen) for rect_list in all_player_cards for rect in rect_list if (rect.text, str(all_player_cards.index(rect_list))) in self.game_state.moves[player]] 
 
-    def flash_result(self, text):
+    async def flash_result(self, text):
         current_time = pygame.time.get_ticks()
         if current_time - self.last_time > self.flash_period:
             self.result_visible = not self.result_visible
@@ -175,7 +171,7 @@ class Client:
             self.screen.blit(text, (20, 432))
             self.screen.blit(text, (self.width-text.get_width()-20, 432))
 
-    def draw_result(self):
+    async def draw_result(self):
         if self.game_state.result.count(1) == 1:
             idx = self.game_state.result.index(1)
             if idx == self.p_id:
@@ -186,7 +182,7 @@ class Client:
         elif self.game_state.result.count(1) > 1:
             text = self.game_font.render("Game is tie", 1, (0,200,0))
 
-        self.flash_result(text)
+        await self.flash_result(text)
                
     async def draw_random_num(self):
         text_num = self.random_num_font.render(str(self.game_state.rand_num), 1, (255,0,0))
@@ -205,36 +201,25 @@ class Client:
         merged_surface.blit(text2, (text1.get_width(),0))
         merged_surface_rect = merged_surface.get_rect(midbottom=(self.width-85, 462))
         self.screen.blit(merged_surface, merged_surface_rect)
-
-    def retry_request(self):
-        if not game.running and 1 in game.result and not self.reset_button:
-            client.net.send("retry")
-            self.reset_button = True
-
-    def draw_retry(self):
-        if self.reset_button:
-            text = self.game_font.render("Waiting...", 1, (0,0,0))
-            self.screen.blit(text, (self.width-150, 100))
-        else:
-            text = "Press enter\nto RETRY..."
-            text_l = text.split("\n")
-            y = 100
-            for line in text_l:
-                text = self.game_font.render(line, 1, (0,0,0))
-                self.screen.blit(text, (self.width-150, y))
-                y += self.game_font.get_linesize()
-        # text_rect = text.get_rect(topleft=(self.width-text.get_width()-20, 100))
         
     async def reset_request(self):
-        if not game.running and 1 in game.result and not self.reset_button:
-            num = await asyncio.to_thread(input, "Write the number of cards you need then press enter(1 to 6): ")
-            if 1 <= int(num) <= 6:
-                self.cards_num = int(num)
-                await self.net.send(num+"reset")
-                self.cards = None
-                self.reset_button = True
+        while True:
+            if not self.game_state.running and 1 in self.game_state.result and not self.reset_button:
+                num = await asyncio.to_thread(input, "Write the number of cards you need then press enter(1 to 6): ")
 
-    def draw_reset(self):
+                if int(num) > 6 or int(num) < 1:
+                    print("Number is invalid, try again..")
+                
+                else:
+                    self.cards = None
+                    self.reset_button = True
+                    self.cards_num = int(num)
+                    await self.net.send(num+"reset")
+                    await asyncio.sleep(0.2)
+                    return
+            await asyncio.sleep(0.2)
+            
+    async def draw_reset(self):
         if self.reset_button:
             text = self.game_font.render("Waiting...", 1, (0,0,0))
             self.screen.blit(text, (20, 100))
@@ -247,55 +232,42 @@ class Client:
                 self.screen.blit(text, (20, y))
                 y += self.game_font.get_linesize()
 
-
     async def run(self):
-        if not await self.game_state.all_connected():
-            self.draw_ready()
-            # print("First Stage!")
+        connected = await self.game_state.all_connected()
 
-        elif await self.game_state.all_connected() and not self.game_state.running and not 1 in self.game_state.result:
-            # print("Second Stage!")
+        if not connected:
+            self.draw_ready()
+
+        elif connected and not self.game_state.running and 1 not in self.game_state.result:
             await self.get_cards()
+            self.marked_rects.clear()
             self.draw_rects()
             await self.draw_start_counter()
-            # print(self.cards)
-            # if not self.cards:
-            #     print("waitin for cards...")
-            #     self.cards = await self.net.receive_cards()
-            #     self.game_rects = self.cards_rects()
-                
-            # self.marked_rects.clear()
             
-
         else:
             self.draw_rects()
             if self.game_state.rand_num:
-                self.reset_button = False
+                self.reset_button = False 
                 await self.draw_random_num()
                 await self.rect_check()
-                # print(self.game_state.rand_num)
             else:
-                self.draw_result()
-                self.draw_reset()
+                await self.draw_result()
+                await self.draw_reset()
             self.draw_marked_rects()
             self.draw_opponent_moves()
 
+    async def stop(self):
+        self.stop_event.set()
 
     async def get_game(self):
-        # count_send = 0
-        # count_receive = 0
-        while True:
+        while not self.stop_event.is_set():
             try:
                 game = await self.net.send_get("get")
-                # count_send += 1
                 if not game:
-                    # print("Can not get game state!")
+                    print("Can not get game state!")
                     break
                 else:
                     self.game_state = game
-                    # count_receive += 1
-                    # print(f"SENT:{count_send}  RECEIVED:{count_receive}")
-                    
             except asyncio.IncompleteReadError as e:
                 print(f"Getting game state error: {e}")
 
@@ -309,6 +281,7 @@ class Client:
                     print(f"Can not get cards!")
                 else:
                     self.cards = await self.game_state.deserialize_cards(cards_data)
+                    self.game_rects = self.cards_rects()
             except asyncio.IncompleteReadError as e:
                 print(f"Getting cards error: {e}")
 
@@ -322,13 +295,10 @@ class Client:
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     self.get_pos = pygame.mouse.get_pos()
 
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_RETURN:
-                        self.retry_request()
-                        
-                    elif event.key == pygame.K_SPACE:
-                        # threading.Thread(target=client.reset_request).start()
+                elif event.type == pygame.KEYDOWN:  
+                    if event.key == pygame.K_SPACE:
                         asyncio.create_task(self.reset_request())
+
             await asyncio.sleep(0.01)
 
     async def update_display(self):
@@ -349,48 +319,7 @@ class Client:
                              self.update_display())
 
 
-async def main():
-    user_name = input("Enter your name: ")                   
-    client = Client("192.168.1.9", 9999, user_name, 4)
-    await client.network_init()
-
-    await asyncio.sleep(0.1)
-
-    await client.run_game()
-
-
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
-
-    # while True:
-        
-    #     for event in pygame.event.get():
-    #         if event.type == pygame.QUIT:
-    #             pygame.quit()
-    #             sys.exit()
-
-    #         elif event.type == pygame.MOUSEBUTTONDOWN:
-    #             client.get_pos = pygame.mouse.get_pos()
-
-    #         elif event.type == pygame.KEYDOWN:
-    #             if event.key == pygame.K_RETURN:
-    #                 client.retry_request()
-                    
-    #             elif event.key == pygame.K_SPACE:
-    #                 # threading.Thread(target=client.reset_request).start()
-    #                 asyncio.create_task(client.reset_request())
-
-            
-    #     game = await client.get_game(2)
-
-    #     client.screen.fill((255,255,255))   
-    #     if game: 
-    #         await client.run(game)
-        
-    #     pygame.display.update()
-    #     clock.tick(60)
+ 
 
     
 

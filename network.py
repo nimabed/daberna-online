@@ -9,14 +9,7 @@ class Network:
         self.port = port
         self.reader = None
         self.writer = None
-        # self.player = await self.connect()
         self.game = Game(2)
-
-    # async def get_p_id(self):
-    #     return int(self.player[0])
-
-    # async def get_num_of_p(self):
-    #     return int(self.player[1])
 
     async def connect(self):
         self.reader, self.writer = await asyncio.open_connection(self.ip, self.port)
@@ -54,16 +47,11 @@ class Network:
 
     async def send(self, data):
         try:
-            self.writer.write(data.encode())
-            await self.writer.drain()
+            message = data.encode()
+            length = struct.pack("I", len(message))
 
-            # if data == "get":
-            #     data_recv = await self.received_all()
-            #     if data_recv and await self.check_seri(data_recv):
-            #         await self.game.deserialize(data_recv[64:])
-            #         return self.game
-            #     else:
-            #         print("Checksum mismatch!")
+            self.writer.write(length+message)
+            await self.writer.drain()
 
             if data == "getcards":
                 data_recv = await self.received_all()
@@ -76,21 +64,26 @@ class Network:
 
     async def send_get(self, data):
         try:
-            self.writer.write(data.encode())
+            message = data.encode()
+            length = struct.pack("I", len(message))
+
+            self.writer.write(length+message)
             await self.writer.drain()
 
-            # if data == "get":
-            data_recv = await self.received_all()
-            if data_recv and await self.check_seri(data_recv):
+            length_byte = await self.reader.readexactly(4)
+            if not length_byte:
+                print("Not receiving cards length!")
+
+            length = struct.unpack("I", length_byte)[0]
+            data_recv = await self.reader.read(length)
+            if not data_recv:
+                print("Not receiving cards!")
+
+            if await self.check_seri(data_recv):
                 await self.game.deserialize(data_recv[64:])
                 return self.game
             else:
                 print("Checksum mismatch!")
-
-            # elif data == "getcards":
-            #     data_recv = await self.received_all()
-            #     if data_recv and await self.check_seri(data_recv):
-            #         return data_recv[64:]
 
         except asyncio.IncompleteReadError as e:
             print(f"Sending error: {e}")

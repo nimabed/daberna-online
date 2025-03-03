@@ -3,11 +3,12 @@ import game_pb2
 
 class Game:
     def __init__(self, num_of_players):
-        self.players = [""] * num_of_players
-        self.moves = [[]] * num_of_players
-        self.result = [0] * num_of_players
+        self.players = ["" for _ in range(num_of_players)]
+        self.moves = [[] for _ in range(num_of_players)]
+        self.result = [0 for _ in range(num_of_players)]
         self.players_num = num_of_players
         self.running = False
+        self.reset_var = False
         self.rand_num = None
         self.start_counter = 4
         self.random_num_counter = 10
@@ -21,26 +22,24 @@ class Game:
     # Added with NARENJAK! :-)
     async def reset(self):
         async with self.lock:
-            self.moves = [[]] * self.num_of_players
-            self.result = [0] * self.num_of_players
+            self.moves = [[] for _ in range(self.players_num)]
+            self.result = [0 for _ in range(self.players_num)]
             self.start_counter = 4
+            self.random_num_counter = 10
         
     async def player_move(self, p_id, number):
-        # async with self.lock:
         self.moves[p_id].append(tuple(number.split(",")))
 
     async def winner_check(self, p_id, cards):
-        # async with self.lock:
         check_list = self.moves[p_id]
 
         for index, card in enumerate(cards):
             for i in range(3):
-                if (1 if item[i].isdigit() else 0 for item in card) == (1 if item[i].isdigit() and (item[i],str(index)) in check_list else 0 for item in card):
+                if [True for item in card if item[i].isdigit()] == [True for item in card if (item[i],str(index)) in check_list]:
                     self.result[p_id] = 1
                     return 
-            
+
     async def serialize(self):
-        # async with self.lock:
         game_proto = game_pb2.Game()
         game_proto.players.extend(self.players)
         for move_list in self.moves:
@@ -52,6 +51,7 @@ class Game:
             game_proto.moves.append(move_list_proto)
         game_proto.result.extend(self.result)
         game_proto.running = self.running
+        game_proto.reset_var = self.reset_var
         game_proto.rand_num = self.rand_num if self.rand_num is not None else 0
         game_proto.start_counter = self.start_counter
         game_proto.random_num_counter = self.random_num_counter
@@ -59,13 +59,13 @@ class Game:
         return game_proto.SerializeToString()
 
     async def deserialize(self, data):
-        # async with self.lock:
         game_proto = game_pb2.Game()
         game_proto.ParseFromString(data)
         self.players = list(game_proto.players)
         self.moves = [[(move.first,move.second) for move in move_list.move]for move_list in game_proto.moves]
         self.result = list(game_proto.result)
         self.running = game_proto.running
+        self.reset_var = game_proto.reset_var
         self.rand_num = game_proto.rand_num if game_proto.rand_num != 0 else None
         self.start_counter = game_proto.start_counter
         self.random_num_counter = game_proto.random_num_counter
@@ -98,11 +98,7 @@ class Game:
                 for innerlist in cards.cards:
                     inner = [list(item.values) for item in innerlist.lists]
                     deserialized_dict[player].append(inner)
-                    # inner = []
-                    # for item in innerlist.lists:
-                    #     inner.append(list(item.values))
                 
-
             return deserialized_dict
 
 
