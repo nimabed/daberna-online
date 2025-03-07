@@ -16,8 +16,7 @@ class Game:
 
 
     async def all_connected(self):
-        async with self.lock:
-            return all(self.players)   
+        return all(self.players)   
 
     # Added with NARENJAK! :-)
     async def reset(self):

@@ -3,7 +3,7 @@ from client import Client
 
 async def main():
     user_name = input("Enter your name: ")                   
-    client = Client("192.168.1.9", 9999, user_name, 2)
+    client = Client("192.168.1.9", 9999, user_name, 4)
     await client.network_init()
 
     await asyncio.sleep(0.1)

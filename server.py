@@ -56,7 +56,7 @@ class Server:
         numbers = [_ for _ in range(1,91)]
 
         while True:
-            if self.game.running:
+            if self.game.running and len(self.clients) == self.players:
                 num = random.choice(numbers)
                 self.game.rand_num = num
                 numbers.remove(num)
@@ -78,6 +78,9 @@ class Server:
                     async with self.lock:
                         self.game.running = True
                         self.try_var = 0
+            else:
+                break
+            
 
     async def active_client(self, reader, writer, player):
         while True:
@@ -123,11 +126,11 @@ class Server:
                 break
 
         async with self.lock:
-            self.game.players[player] = False
+            self.game.players[player] = ""
+            self.clients.remove(writer)
             self.game.running = False
             writer.close()
             await writer.wait_closed()
-            self.clients.remove(writer)
         print("Connection close!")
 
     async def handle_connection(self, reader, writer):

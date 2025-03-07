@@ -45,7 +45,7 @@ class Client:
         # Font setup
         self.game_font = pygame.font.SysFont("FreeSerif", 30)
         self.opponent_font = pygame.font.SysFont("FreeSerif", 25)
-        self.random_num_font = pygame.font.SysFont("Lato Black", 55)
+        self.random_num_font = pygame.font.SysFont("Lato Black", 70)
 
     async def network_init(self):
         self.net = Network(self.ip, self.port)
@@ -186,20 +186,23 @@ class Client:
                
     async def draw_random_num(self):
         text_num = self.random_num_font.render(str(self.game_state.rand_num), 1, (255,0,0))
-        text_timer = self.game_font.render(f"Timer: {self.game_state.random_num_counter+1}", 1, (0,0,0))
-        text_num_rect = text_num.get_rect(midbottom=(100, 462))
-        text_timer_rect = text_timer.get_rect(midbottom=(self.width-85, 462))
-        self.screen.blit(text_num, text_num_rect)
-        self.screen.blit(text_timer, text_timer_rect)
+        text_timer = self.game_font.render(f"({self.game_state.random_num_counter+1}s)", 1, (0,0,0))
+        text_timer_rect = text_timer.get_rect(midleft=(text_num.get_width(),text_num.get_height()/2))
+        merged_surface = pygame.Surface((text_num.get_width()+text_timer.get_width(), max(text_num.get_height(),text_timer.get_height())))
+        merged_surface.fill((255,255,255))
+        merged_surface.blit(text_num, (0,0))
+        merged_surface.blit(text_timer, text_timer_rect)
+        merged_surface_rect = merged_surface.get_rect(midbottom=(self.width/2+20, 462))
+        self.screen.blit(merged_surface, merged_surface_rect)
 
-    async def draw_start_counter(self):
+    def draw_start_counter(self):
         text1 = self.game_font.render(f"Starting in ", 1, (0,0,0))
         text2 = self.game_font.render(f"{self.game_state.start_counter}s", 1, (255,0,0))
         merged_surface = pygame.Surface((text1.get_width()+text2.get_width(), max(text1.get_height(),text2.get_height())))
         merged_surface.fill((255,255,255))
         merged_surface.blit(text1, (0,0))
         merged_surface.blit(text2, (text1.get_width(),0))
-        merged_surface_rect = merged_surface.get_rect(midbottom=(self.width-85, 462))
+        merged_surface_rect = merged_surface.get_rect(midbottom=(self.width/2, 462))
         self.screen.blit(merged_surface, merged_surface_rect)
         
     async def reset_request(self):
@@ -222,27 +225,24 @@ class Client:
     async def draw_reset(self):
         if self.reset_button:
             text = self.game_font.render("Waiting...", 1, (0,0,0))
-            self.screen.blit(text, (20, 100))
+            text_rect = text.get_rect(midbottom=(self.width/2,462))
         else:
-            text = "Press space\nto RESET..."
-            text_l = text.split("\n")
-            y = 100
-            for line in text_l:
-                text = self.game_font.render(line, 1, (0,0,0))
-                self.screen.blit(text, (20, y))
-                y += self.game_font.get_linesize()
-
+            text = self.game_font.render("Press space to reset...", 1, (0,0,0))
+            text_rect = text.get_rect(midbottom=(self.width/2,462))
+        self.screen.blit(text, text_rect)
+                                      
     async def run(self):
         connected = await self.game_state.all_connected()
+        # print(connected)
 
-        if not connected:
+        if not connected or not self.game_state:
             self.draw_ready()
 
         elif connected and not self.game_state.running and 1 not in self.game_state.result:
             await self.get_cards()
             self.marked_rects.clear()
             self.draw_rects()
-            await self.draw_start_counter()
+            self.draw_start_counter()
             
         else:
             self.draw_rects()
