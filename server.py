@@ -81,7 +81,6 @@ class Server:
             else:
                 break
             
-
     async def active_client(self, reader, writer, player):
         while True:
             try:

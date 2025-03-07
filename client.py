@@ -233,7 +233,6 @@ class Client:
                                       
     async def run(self):
         connected = await self.game_state.all_connected()
-        # print(connected)
 
         if not connected or not self.game_state:
             self.draw_ready()
