@@ -8,6 +8,7 @@ class Network:
         self.port = port
         self.reader = None
         self.writer = None
+        self.lock = asyncio.Lock()
 
     async def connect(self):
         self.reader, self.writer = await asyncio.open_connection(self.ip, self.port)
@@ -32,14 +33,15 @@ class Network:
         return bytes(data_bytes)
     
     async def received_all(self):
-        bytes_length = await self.received_message(4)
-        if not bytes_length:
-            return
-        message_length = struct.unpack("I", bytes_length)[0]
+        async with self.lock:
+            bytes_length = await self.received_message(4)
+            if not bytes_length:
+                return
+            message_length = struct.unpack("I", bytes_length)[0]
 
-        message_bytes = await self.received_message(message_length)
-        if not message_bytes:
-            return
+            message_bytes = await self.received_message(message_length)
+            if not message_bytes:
+                return
         
         return message_bytes
 

@@ -233,7 +233,6 @@ class Client:
         self.screen.blit(text, text_rect)
                                       
     async def run(self):
-        # print(f"GAME:{self.game_state}")
         connected = all(self.game_state["players"])
 
         if not connected or not self.game_state:
@@ -241,7 +240,6 @@ class Client:
 
         elif connected and not self.game_state["running"] and 1 not in self.game_state["result"]:
             await self.get_cards()
-            # print(f"PLAYER CARD:{self.cards}")
             self.marked_rects.clear()
             self.draw_rects()
             self.draw_start_counter()
