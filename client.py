@@ -5,6 +5,7 @@ import pygame
 from rects import Rects
 from setting import *
 from network import Network
+from serialization import GameSerialization
 
 
 pygame.init()
@@ -98,7 +99,7 @@ class Client:
         if self.get_pos:
             for i in range(len(self.game_rects[self.p_id])):
                 for rect in self.game_rects[self.p_id][i]:
-                    if rect.clicked(self.get_pos) and rect.text == str(self.game_state.rand_num):
+                    if rect.clicked(self.get_pos) and rect.text == str(self.game_state["rand_num"]):
                         self.marked_rects.append(rect)
                         await self.net.send(f"M{rect.text},{i}")
             self.get_pos = None
@@ -126,27 +127,27 @@ class Client:
         for player, cards in self.game_rects.items():
             if player == self.p_id:
                 [rect.draw_player(self.screen) for rects in cards for rect in rects]
-                text = self.game_font.render(self.game_state.players[player], 1, (250,0,0))
+                text = self.game_font.render(self.game_state['players'][player], 1, (250,0,0))
                 text_rect = text.get_rect(topleft=(10,5))
             else:
                 [rect.draw_opponent(self.screen) for rects in cards for rect in rects]
                 if self.number_of_players == 2:
-                    text = self.opponent_font.render(self.game_state.players[player], 1, (250,0,0))
+                    text = self.opponent_font.render(self.game_state['players'][player], 1, (250,0,0))
                     text_rect = text.get_rect(topleft=(10,477))
                 elif self.number_of_players == 3:
                     select += 1
                     pos = (10, self.width/2+10)
-                    text = self.opponent_font.render(self.game_state.players[player], 1, (250,0,0))
+                    text = self.opponent_font.render(self.game_state['players'][player], 1, (250,0,0))
                     text_rect = text.get_rect(topleft=(pos[select], 477))
                 elif self.number_of_players == 4:
                     select += 1
                     pos = (10,426,842)
-                    text = self.opponent_font.render(self.game_state.players[player], 1, (250,0,0))
+                    text = self.opponent_font.render(self.game_state['players'][player], 1, (250,0,0))
                     text_rect = text.get_rect(topleft=(pos[select], 477))
                 else:
                     select += 1
                     pos = (10,322,634,946)
-                    text = self.opponent_font.render(self.game_state.players[player], 1, (250,0,0))
+                    text = self.opponent_font.render(self.game_state['players'][player], 1, (250,0,0))
                     text_rect = text.get_rect(topleft=(pos[select], 477))
 
             self.screen.blit(text, text_rect)
@@ -158,8 +159,8 @@ class Client:
 
     def draw_opponent_moves(self):
         for player, all_player_cards in self.game_rects.items():
-            if player != self.p_id and self.game_state.moves[player]:
-                [rect.fill_rect(self.screen) for rect_list in all_player_cards for rect in rect_list if (rect.text, str(all_player_cards.index(rect_list))) in self.game_state.moves[player]] 
+            if player != self.p_id and self.game_state["moves"][player]:
+                [rect.fill_rect(self.screen) for rect_list in all_player_cards for rect in rect_list if (rect.text, str(all_player_cards.index(rect_list))) in self.game_state["moves"][player]] 
 
     async def flash_result(self, text):
         current_time = pygame.time.get_ticks()
@@ -172,21 +173,21 @@ class Client:
             self.screen.blit(text, (self.width-text.get_width()-20, 432))
 
     async def draw_result(self):
-        if self.game_state.result.count(1) == 1:
-            idx = self.game_state.result.index(1)
+        if self.game_state["result"].count(1) == 1:
+            idx = self.game_state["result"].index(1)
             if idx == self.p_id:
                 text = self.game_font.render("You win", 1, (0,200,0))
             else:
-                text = self.game_font.render(f"{self.game_state.players[idx]} wins", 1, (0,200,0))
+                text = self.game_font.render(f"{self.game_state['players'][idx]} wins", 1, (0,200,0))
         
-        elif self.game_state.result.count(1) > 1:
+        elif self.game_state["result"].count(1) > 1:
             text = self.game_font.render("Game is tie", 1, (0,200,0))
 
         await self.flash_result(text)
                
     async def draw_random_num(self):
-        text_num = self.random_num_font.render(str(self.game_state.rand_num), 1, (255,0,0))
-        text_timer = self.game_font.render(f"({self.game_state.random_num_counter+1}s)", 1, (0,0,0))
+        text_num = self.random_num_font.render(str(self.game_state["rand_num"]), 1, (255,0,0))
+        text_timer = self.game_font.render(f"({self.game_state['random_num_counter']+1}s)", 1, (0,0,0))
         text_timer_rect = text_timer.get_rect(midleft=(text_num.get_width(),text_num.get_height()/2))
         merged_surface = pygame.Surface((text_num.get_width()+text_timer.get_width(), max(text_num.get_height(),text_timer.get_height())))
         merged_surface.fill((255,255,255))
@@ -197,7 +198,7 @@ class Client:
 
     def draw_start_counter(self):
         text1 = self.game_font.render(f"Starting in ", 1, (0,0,0))
-        text2 = self.game_font.render(f"{self.game_state.start_counter}s", 1, (255,0,0))
+        text2 = self.game_font.render(f"{self.game_state['start_counter']}s", 1, (255,0,0))
         merged_surface = pygame.Surface((text1.get_width()+text2.get_width(), max(text1.get_height(),text2.get_height())))
         merged_surface.fill((255,255,255))
         merged_surface.blit(text1, (0,0))
@@ -207,7 +208,7 @@ class Client:
         
     async def reset_request(self):
         while True:
-            if not self.game_state.running and 1 in self.game_state.result and not self.reset_button:
+            if not self.game_state["running"] and 1 in self.game_state["result"] and not self.reset_button:
                 num = await asyncio.to_thread(input, "Write the number of cards you need then press enter(1 to 6): ")
 
                 if int(num) > 6 or int(num) < 1:
@@ -232,20 +233,22 @@ class Client:
         self.screen.blit(text, text_rect)
                                       
     async def run(self):
-        connected = await self.game_state.all_connected()
+        # print(f"GAME:{self.game_state}")
+        connected = all(self.game_state["players"])
 
         if not connected or not self.game_state:
             self.draw_ready()
 
-        elif connected and not self.game_state.running and 1 not in self.game_state.result:
+        elif connected and not self.game_state["running"] and 1 not in self.game_state["result"]:
             await self.get_cards()
+            # print(f"PLAYER CARD:{self.cards}")
             self.marked_rects.clear()
             self.draw_rects()
             self.draw_start_counter()
             
         else:
             self.draw_rects()
-            if self.game_state.rand_num:
+            if self.game_state["rand_num"]:
                 self.reset_button = False 
                 await self.draw_random_num()
                 await self.rect_check()
@@ -261,12 +264,12 @@ class Client:
     async def get_game(self):
         while not self.stop_event.is_set():
             try:
-                game = await self.net.send_get("get")
-                if not game:
+                game_data = await self.net.send_get("get")
+                if not game_data:
                     print("Can not get game state!")
                     break
                 else:
-                    self.game_state = game
+                    self.game_state = GameSerialization.deserialize(game_data)
             except asyncio.IncompleteReadError as e:
                 print(f"Getting game state error: {e}")
 
@@ -279,7 +282,8 @@ class Client:
                 if not cards_data:
                     print(f"Can not get cards!")
                 else:
-                    self.cards = await self.game_state.deserialize_cards(cards_data)
+                    # self.cards = await self.game_state.deserialize_cards(cards_data)
+                    self.cards = GameSerialization.deserialize_cards(cards_data)
                     self.game_rects = self.cards_rects()
             except asyncio.IncompleteReadError as e:
                 print(f"Getting cards error: {e}")

@@ -3,6 +3,7 @@ import random
 import hashlib
 import struct
 from gctl import Game
+from serialization import GameSerialization
 
 class Server:
     def __init__(self, host, port, num_of_players):
@@ -33,7 +34,7 @@ class Server:
 
     async def send_cards(self, client):
         async with self.lock:
-            players_cards_bytes = await self.game.serialize_cards(self.players_cards)
+            players_cards_bytes = GameSerialization.serialize_cards(self.players_cards)
             checksum_cards = hashlib.sha256(players_cards_bytes).hexdigest()
             message_bytes = checksum_cards.encode()+players_cards_bytes
             message_length = len(message_bytes)
@@ -113,7 +114,7 @@ class Server:
                         await self.game.winner_check(player, self.players_cards[player])
 
                     else:
-                        serialized_game = await self.game.serialize()
+                        serialized_game = GameSerialization.serialize(self.game)
                         checksum = hashlib.sha256(serialized_game).hexdigest()
                         message_bytes = checksum.encode()+serialized_game
                         message_length = struct.pack("I", len(message_bytes))
@@ -177,7 +178,7 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server("192.168.1.9", 9999, 2)
+    server = Server("192.168.1.9", 9999, 3)
     asyncio.run(server.run())
 
 

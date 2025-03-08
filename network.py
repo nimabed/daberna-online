@@ -1,7 +1,6 @@
 import asyncio
 import hashlib
 import struct
-from gctl import Game
 
 class Network:
     def __init__(self, ip, port):
@@ -9,7 +8,6 @@ class Network:
         self.port = port
         self.reader = None
         self.writer = None
-        self.game = Game(2)
 
     async def connect(self):
         self.reader, self.writer = await asyncio.open_connection(self.ip, self.port)
@@ -49,7 +47,6 @@ class Network:
         try:
             message = data.encode()
             length = struct.pack("I", len(message))
-
             self.writer.write(length+message)
             await self.writer.drain()
 
@@ -66,25 +63,16 @@ class Network:
         try:
             message = data.encode()
             length = struct.pack("I", len(message))
-
             self.writer.write(length+message)
             await self.writer.drain()
 
-            length_byte = await self.reader.readexactly(4)
-            if not length_byte:
-                print("Not receiving cards length!")
-
-            length = struct.unpack("I", length_byte)[0]
-            data_recv = await self.reader.read(length)
+            data_recv = await self.received_all()
             if not data_recv:
                 print("Not receiving cards!")
-
             if await self.check_seri(data_recv):
-                await self.game.deserialize(data_recv[64:])
-                return self.game
+                return data_recv[64:]
             else:
                 print("Checksum mismatch!")
-
         except asyncio.IncompleteReadError as e:
             print(f"Sending error: {e}")
             return
