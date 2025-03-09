@@ -233,50 +233,73 @@ class Client:
         self.screen.blit(text, text_rect)
                                       
     async def run(self):
-        connected = all(self.game_state["players"])
 
-        if not connected or not self.game_state:
-            self.draw_ready()
+        await self.get_cards()
+        self.draw_ready()
 
-        elif connected and not self.game_state["running"] and 1 not in self.game_state["result"]:
-            await self.get_cards()
-            self.marked_rects.clear()
-            self.draw_rects()
-            self.draw_start_counter()
+        # connected = all(self.game_state["players"])
+
+        # if not connected or not self.game_state:
+        #     self.draw_ready()
+
+        # elif connected and not self.game_state["running"] and 1 not in self.game_state["result"]:
+        #     await self.get_cards()
+        #     self.marked_rects.clear()
+        #     self.draw_rects()
+        #     self.draw_start_counter()
             
-        else:
-            self.draw_rects()
-            if self.game_state["rand_num"]:
-                self.reset_button = False 
-                await self.draw_random_num()
-                await self.rect_check()
-            else:
-                await self.draw_result()
-                await self.draw_reset()
-            self.draw_marked_rects()
-            self.draw_opponent_moves()
+        # else:
+        #     self.draw_rects()
+        #     if self.game_state["rand_num"]:
+        #         self.reset_button = False 
+        #         await self.draw_random_num()
+        #         await self.rect_check()
+        #     else:
+        #         await self.draw_result()
+        #         await self.draw_reset()
+        #     self.draw_marked_rects()
+        #     self.draw_opponent_moves()
 
     async def stop(self):
         self.stop_event.set()
 
     async def get_game(self):
-        while not self.stop_event.is_set():
+
+        while True:
             try:
-                game_data = await self.net.send_get("get")
-                if not game_data:
-                    print("Can not get game state!")
+                game = await self.net.dispatcher()
+                print("GAME RECEIVED!!!!!!!!!")
+                if not game:
+                    print("Can not get the game state!")
                     break
                 else:
-                    self.game_state = GameSerialization.deserialize(game_data)
+                    self.game_state = GameSerialization.deserialize(game)
+                    print(self.game_state)
+
             except asyncio.IncompleteReadError as e:
                 print(f"Getting game state error: {e}")
-
+            
             await asyncio.sleep(0.01)
+
+
+        # while not self.stop_event.is_set():
+        #     try:
+        #         game_data = await self.net.send_get("get")
+        #         if not game_data:
+        #             print("Can not get game state!")
+        #             break
+        #         else:
+        #             self.game_state = GameSerialization.deserialize(game_data)
+        #     except asyncio.IncompleteReadError as e:
+        #         print(f"Getting game state error: {e}")
+
+        #     await asyncio.sleep(0.01)
 
     async def get_cards(self):
         if not self.cards:
             try:
-                cards_data = await self.net.send("getcards")
+                await self.net.send("getcards")
+                cards_data = await self.net.dispatcher()
                 if not cards_data:
                     print(f"Can not get cards!")
                 else:
@@ -308,6 +331,8 @@ class Client:
 
             if self.game_state:
                 await self.run()
+            else:
+                self.ready_state()
 
             pygame.display.update()
             clock.tick(60)

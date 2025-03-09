@@ -20,8 +20,8 @@ class Network:
             return 
 
     async def check_seri(self, check_game_byte):
-        received_checksum = hashlib.sha256(check_game_byte[64:]).hexdigest()
-        return received_checksum.encode() == check_game_byte[:64]
+        received_checksum = hashlib.sha256(check_game_byte[65:]).hexdigest()
+        return received_checksum.encode() == check_game_byte[1:65]
 
     async def received_message(self, count_byte):
         data_bytes = bytearray()
@@ -45,6 +45,23 @@ class Network:
         
         return message_bytes
 
+    async def dispatcher(self):
+        data_recv = await self.received_all()
+        if data_recv[0] == b'c':
+            return await self.send_card(data_recv)
+        
+        else:
+            return await self.send_game(data_recv)
+
+    async def send_card(self, bytes_value):
+        if await self.check_seri(bytes_value):
+            return bytes_value[65:]
+
+    async def send_game(self, bytes_value):
+        if await self.check_seri(bytes_value):
+            return bytes_value[65:]
+
+
     async def send(self, data):
         try:
             message = data.encode()
@@ -52,29 +69,38 @@ class Network:
             self.writer.write(length+message)
             await self.writer.drain()
 
-            if data == "getcards":
-                data_recv = await self.received_all()
-                if data_recv and await self.check_seri(data_recv):
-                    return data_recv[64:]
+            # if data == "getcards":
+            #     data_recv = await self.received_all()
+            #     if data_recv and await self.check_seri(data_recv):
+            #         return data_recv[64:]
 
         except asyncio.IncompleteReadError as e:
             print(f"Sending error: {e}")
             return
 
-    async def send_get(self, data):
-        try:
-            message = data.encode()
-            length = struct.pack("I", len(message))
-            self.writer.write(length+message)
-            await self.writer.drain()
+    # async def send_get(self, data):
+    #     try:
+    #         message = data.encode()
+    #         length = struct.pack("I", len(message))
+    #         self.writer.write(length+message)
+    #         await self.writer.drain()
 
-            data_recv = await self.received_all()
-            if not data_recv:
-                print("Not receiving cards!")
-            if await self.check_seri(data_recv):
-                return data_recv[64:]
-            else:
-                print("Checksum mismatch!")
-        except asyncio.IncompleteReadError as e:
-            print(f"Sending error: {e}")
-            return
+    #         data_recv = await self.received_all()
+    #         if not data_recv:
+    #             print("Not receiving cards!")
+    #         if await self.check_seri(data_recv):
+    #             return data_recv[64:]
+    #         else:
+    #             print("Checksum mismatch!")
+    #     except asyncio.IncompleteReadError as e:
+    #         print(f"Sending error: {e}")
+    #         return
+
+    # async def receive_game(self):
+    #     game_data = await self.received_all()
+        
+    #     if not game_data:
+    #         print("Game data not received!")
+    #     else:
+    #         if await self.check_seri(game_data):
+    #             return game_data[64:]

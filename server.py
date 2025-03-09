@@ -35,9 +35,13 @@ class Server:
     async def send_cards(self, client):
         async with self.lock:
             players_cards_bytes = GameSerialization.serialize_cards(self.players_cards)
-            checksum_cards = hashlib.sha256(players_cards_bytes).hexdigest()
-            message_bytes = checksum_cards.encode()+players_cards_bytes
+            checksum_cards ='c' +  hashlib.sha256(players_cards_bytes).hexdigest()
+            # checksum_bytes = checksum_cards.encode()
+            message_bytes = checksum_cards.encode() + players_cards_bytes
             message_length = len(message_bytes)
+            # print(f"CHECKSUM:{checksum_cards} // LENGTH:{len(checksum_cards)}")
+            # print(f"CHECKSUM BYTES:{checksum_bytes} // LENGTH:{len(checksum_bytes)}")
+            print(f"CARD:{message_bytes[0]}")
 
             try:
                 client.write(struct.pack("I", message_length))
@@ -52,6 +56,23 @@ class Server:
                 asyncio.create_task(self.random_numbers())
                 self.number_of_sent_cards = 0   
     
+    async def send_game(self):
+        print("Within send game")
+        await asyncio.sleep(5)
+        print("After 5 second")
+        while True:
+            serialized_game = GameSerialization.serialize(self.game)
+            checksum = 'g' + hashlib.sha256(serialized_game).hexdigest()
+            message_bytes = checksum.encode() + serialized_game
+            message_length = struct.pack("I", len(message_bytes))
+            # print(f"GAME:{message_bytes.decode()[64]}")
+
+            for client in self.clients:
+                client.write(message_length+message_bytes)
+                await client.drain()
+
+            await asyncio.sleep(0.01)            
+
     async def random_numbers(self):
         copy_counter = self.game.random_num_counter
         numbers = [_ for _ in range(1,91)]
@@ -113,13 +134,13 @@ class Server:
                         await self.game.player_move(player, data[1:])
                         await self.game.winner_check(player, self.players_cards[player])
 
-                    else:
-                        serialized_game = GameSerialization.serialize(self.game)
-                        checksum = hashlib.sha256(serialized_game).hexdigest()
-                        message_bytes = checksum.encode()+serialized_game
-                        message_length = struct.pack("I", len(message_bytes))
-                        writer.write(message_length+message_bytes)
-                        await writer.drain()
+                    # else:
+                    #     serialized_game = GameSerialization.serialize(self.game)
+                    #     checksum = hashlib.sha256(serialized_game).hexdigest()
+                    #     message_bytes = checksum.encode()+serialized_game
+                    #     message_length = struct.pack("I", len(message_bytes))
+                    #     writer.write(message_length+message_bytes)
+                    #     await writer.drain()
                         
             except (asyncio.IncompleteReadError, BrokenPipeError) as e:
                 print(f"Error handling client {player}: {e}")
@@ -163,6 +184,9 @@ class Server:
         except Exception as e:
             print(f"Error receiving initial data from player {p_id}: {e}")
 
+        if await self.game.all_connected():
+            asyncio.create_task(self.send_game())
+
         asyncio.create_task(self.active_client(reader, writer, p_id))
 
     async def run(self):
@@ -178,7 +202,7 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server("192.168.1.9", 9999, 3)
+    server = Server("192.168.1.9", 9999, 2)
     asyncio.run(server.run())
 
 
