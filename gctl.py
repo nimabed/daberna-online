@@ -10,7 +10,7 @@ class Game:
         self.reset_var = False
         self.rand_num = None
         self.start_counter = 4
-        self.random_num_counter = 7
+        self.random_num_counter = 10
         self.lock = asyncio.Lock()
 
 

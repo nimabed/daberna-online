@@ -29,7 +29,7 @@ class Client:
         self.cards = None
         self.game_rects = None
         self.get_pos = None
-        self.reset_button = False
+        self.reset_button = 0
         self.marked_rects = []
         self.result_visible = False
         self.flash_period = 1000
@@ -119,9 +119,6 @@ class Client:
         elif self.number_of_players == 5:
             for i in range(1,4):
                 pygame.draw.line(self.screen, (0,0,0), ((self.width/4)*i, 472), ((self.width/4)*i, self.height), 2)
-
-    def draw_ready(self):
-        self.ready_state()
         
     def draw_rects(self):
         self.draw_separate_lines()
@@ -165,9 +162,9 @@ class Client:
                 [rect.fill_rect(self.screen) for rect_list in all_player_cards for rect in rect_list if (rect.text, str(all_player_cards.index(rect_list))) in self.game_state["moves"][player]] 
 
     async def flash_result(self, text):
-        # reset_text = self.game_font.render("Press space to reset...", 1, (0,0,0))
-        # reset_text_rect = reset_text.get_rect(midbottom=(self.width/2, 462))
-        # self.screen.blit(reset_text, reset_text_rect)
+        reset_quit_t = self.game_font.render("Press SPACE to reset or Q to quit", 1, (0,0,0))
+        reset_quit_t_rect = reset_quit_t.get_rect(midbottom=(self.width/2, 462))
+        self.screen.blit(reset_quit_t, reset_quit_t_rect)
 
         current_time = pygame.time.get_ticks()
         if current_time - self.last_time > self.flash_period:
@@ -179,18 +176,19 @@ class Client:
             self.screen.blit(text, (self.width-text.get_width()-20, 432))
 
     async def draw_result(self):
-        if self.game_state["result"].count(1) == 1:
-            idx = self.game_state["result"].index(1)
-            if idx == self.p_id:
-                text = self.game_font.render("You win", 1, (0,200,0))
-            else:
-                text = self.game_font.render(f"{self.game_state['players'][idx]} wins", 1, (0,200,0))
-        
-        elif self.game_state["result"].count(1) > 1:
-            text = self.game_font.render("Game is tie", 1, (0,200,0))
+        if not self.reset_button:
+            if self.game_state["result"].count(1) == 1:
+                idx = self.game_state["result"].index(1)
+                if idx == self.p_id:
+                    text = self.game_font.render("You win", 1, (0,200,0))
+                else:
+                    text = self.game_font.render(f"{self.game_state['players'][idx]} wins", 1, (0,200,0))
+            
+            elif self.game_state["result"].count(1) > 1:
+                text = self.game_font.render("Game is tie", 1, (0,200,0))
 
-        await self.flash_result(text)
-        await self.stop()
+            await self.flash_result(text)
+            await self.stop()
                
     async def draw_random_num(self):
         text_num = self.random_num_font.render(str(self.game_state["rand_num"]), 1, (255,0,0))
@@ -214,6 +212,7 @@ class Client:
         self.screen.blit(merged_surface, merged_surface_rect)
         
     async def reset_request(self):
+        self.reset_button += 1
         while True:
             if not self.game_state['running'] and 1 in self.game_state['result']:
                 num = await asyncio.to_thread(input, "Write the number of cards you need then press enter(1 to 6): ")
@@ -223,18 +222,14 @@ class Client:
                 
                 else:
                     self.cards = None
-                    self.reset_button = True
+                    self.reset_button += 1
                     self.cards_num = int(num)
                     await self.net.send(num+"reset")
-                    # print("Before response")
                     response = await self.net.send_reset()
-                    # print("After response")
                     if response == b'start':
-                        # self.stop_event.clear()
                         self.stop_event = True
                         asyncio.create_task(self.get_game())
-                        # print("Game started again")
-                        # break
+                        break
                     else:
                         print(f"Can not receive reset response:{response}")
                     await asyncio.sleep(0.1)
@@ -243,13 +238,13 @@ class Client:
             
     async def draw_reset(self):
         if self.reset_button:
-            text = self.game_font.render("Waiting for opponents...", 1, (0,0,0))
+            if self.reset_button > 1:
+                text = self.game_font.render("Waiting for opponents...", 1, (0,0,0))
+            else:
+                text = self.game_font.render("Enter the number of cards you want", 1, (0,0,0))
             text_rect = text.get_rect(midbottom=(self.width/2,462))
-        else:
-            text = self.game_font.render("Press space to reset...", 1, (0,0,0))
-            text_rect = text.get_rect(midbottom=(self.width/2,462))
-        self.screen.blit(text, text_rect)
-                                      
+            self.screen.blit(text, text_rect)
+                                  
     async def run(self):
 
         connected = all(self.game_state["players"])
@@ -262,21 +257,19 @@ class Client:
             self.marked_rects.clear()
             self.draw_rects()
             self.draw_start_counter()
+            self.reset_button = 0
             
         else:
             self.draw_rects()
-            if self.game_state["rand_num"]:
-                self.reset_button = False 
+            if self.game_state['rand_num']:
                 await self.draw_random_num()
                 await self.rect_check()
             else:
                 await self.draw_result()
                 await self.draw_reset()
-                # await self.stop()
             self.draw_marked_rects()
             self.draw_opponent_moves()
             
-
     async def stop(self):
         if not self.reset_button and 1 in self.game_state['result']:
             self.stop_event = False
@@ -307,7 +300,6 @@ class Client:
 
         print(f'Game Stoped!')
 
-
     async def get_cards(self):
         if not self.cards:
             try:
@@ -322,7 +314,7 @@ class Client:
                 print(f"Getting cards error: {e}")
 
     async def handle_input(self):
-        print("INSIDE handle input")
+        # print("INSIDE handle input")
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -334,13 +326,18 @@ class Client:
 
                 elif event.type == pygame.KEYDOWN:  
                     if event.key == pygame.K_SPACE:
-                        if not self.reset_button:
+                        if not self.reset_button and 1 in self.game_state['result']:
                             asyncio.create_task(self.reset_request())
+
+                    if event.key == pygame.K_q:
+                        if not self.reset_button and 1 in self.game_state['result']:
+                            pygame.quit()
+                            sys.exit()
 
             await asyncio.sleep(0.01)
 
     async def update_display(self):
-        print("INSIDE update display")
+        # print("INSIDE update display")
         while True:
             self.screen.fill((255,255,255))
 

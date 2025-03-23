@@ -193,7 +193,7 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server("192.168.1.9", 9999, 2)
+    server = Server("192.168.1.9", 9999, 3)
     asyncio.run(server.run())
 
 
