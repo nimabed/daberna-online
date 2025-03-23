@@ -10,7 +10,7 @@ class Game:
         self.reset_var = False
         self.rand_num = None
         self.start_counter = 4
-        self.random_num_counter = 12
+        self.random_num_counter = 7
         self.lock = asyncio.Lock()
 
 
@@ -22,7 +22,7 @@ class Game:
             self.moves = [[] for _ in range(self.players_num)]
             self.result = [0 for _ in range(self.players_num)]
             self.start_counter = 4
-            self.random_num_counter = 12
+            self.random_num_counter = 10
         
     async def player_move(self, p_id, number):
         self.moves[p_id].append(tuple(number.split(",")))

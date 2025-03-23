@@ -53,8 +53,11 @@ class GameSerialization:
     
     @staticmethod
     def deserialize_cards(data_bytes):
+        # print("INSIDE --> serialization")
         proto_dict = game_pb2.DictCards()
+        # print("after DictCards object")
         proto_dict.ParseFromString(data_bytes)
+        # print("after Parsing")
         deserialized_dict = {}
         for player, cards in proto_dict.gamedict.items():
             deserialized_dict[player] = []

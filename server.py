@@ -29,53 +29,46 @@ class Server:
         return [[str(item) for item in row]for row in card]
     
     async def retry_game(self):
+        # print("Inside retry game")
         if self.try_var == self.players and 1 in self.game.result:
             await self.game.reset()
 
-    async def send_cards(self, client):
-        async with self.lock:
-            players_cards_bytes = GameSerialization.serialize_cards(self.players_cards)
-            checksum_cards ='c' +  hashlib.sha256(players_cards_bytes).hexdigest()
-            # checksum_bytes = checksum_cards.encode()
-            message_bytes = checksum_cards.encode() + players_cards_bytes
-            message_length = len(message_bytes)
-            # print(f"CHECKSUM:{checksum_cards} // LENGTH:{len(checksum_cards)}")
-            # print(f"CHECKSUM BYTES:{checksum_bytes} // LENGTH:{len(checksum_bytes)}")
-            print(f"CARD:{message_bytes[0]}")
-
-            try:
-                client.write(struct.pack("I", message_length))
-                client.write(message_bytes)
-                await client.drain()
-                self.number_of_sent_cards += 1
-            except Exception as e:
-                print(f"Cannot send players cards: {e}")
-
-            if self.number_of_sent_cards == self.players:
-                await asyncio.sleep(0.1)
-                asyncio.create_task(self.random_numbers())
-                self.number_of_sent_cards = 0   
-    
-    async def send_game(self):
-        print("Within send game")
-        await asyncio.sleep(5)
-        print("After 5 second")
-        while True:
-            serialized_game = GameSerialization.serialize(self.game)
-            checksum = 'g' + hashlib.sha256(serialized_game).hexdigest()
-            message_bytes = checksum.encode() + serialized_game
-            message_length = struct.pack("I", len(message_bytes))
-            # print(f"GAME:{message_bytes.decode()[64]}")
-
             for client in self.clients:
-                client.write(message_length+message_bytes)
+                client.write('start'.encode())
                 await client.drain()
+                await asyncio.sleep(0.5)
 
-            await asyncio.sleep(0.01)            
+    async def send_cards(self, client):
+        players_cards_bytes = GameSerialization.serialize_cards(self.players_cards)
+        checksum_cards = 'card' + hashlib.sha256(players_cards_bytes).hexdigest()
+        message_bytes = checksum_cards.encode() + players_cards_bytes
+        message_length = struct.pack("I", len(message_bytes))
+
+        try:
+            client.write(message_length + message_bytes)
+            await client.drain()
+            self.number_of_sent_cards += 1
+
+        except Exception as e:
+            print(f"Cannot send players cards: {e}")
+
+        if self.number_of_sent_cards == self.players:
+            await asyncio.sleep(0.1)
+            asyncio.create_task(self.random_numbers())
+            self.number_of_sent_cards = 0   
+    
+    async def send_game(self, client):        
+        serialized_game = GameSerialization.serialize(self.game)
+        checksum = 'game' + hashlib.sha256(serialized_game).hexdigest()
+        message_bytes = checksum.encode() + serialized_game
+        message_length = struct.pack("I", len(message_bytes))
+
+        client.write(message_length+message_bytes)
+        await client.drain()
 
     async def random_numbers(self):
-        copy_counter = self.game.random_num_counter
         numbers = [_ for _ in range(1,91)]
+        copy_counter = self.game.random_num_counter
 
         while True:
             if self.game.running and len(self.clients) == self.players:
@@ -104,6 +97,8 @@ class Server:
                 break
             
     async def active_client(self, reader, writer, player):
+        
+        # count = 0
         while True:
             try:
                 raw_length = await reader.readexactly(4)
@@ -118,8 +113,17 @@ class Server:
                     break
                 else:
                     data = raw_data.decode()
-                    
-                    if data.endswith("reset"):
+                    if data == "get":
+                        # count += 1
+                        # print(f"get RECEIVED:{count}")
+                        async with self.lock:
+                            await self.send_game(writer)
+
+                    elif data.startswith("M"):
+                        await self.game.player_move(player, data[1:])
+                        await self.game.winner_check(player, self.players_cards[player])
+
+                    elif data.endswith("reset"):
                         async with self.lock:
                             self.try_var += 1
                             self.players_cards[player] = [self.generate_card() for _ in range(int(data[0]))]
@@ -128,19 +132,9 @@ class Server:
                                 await self.retry_game()
 
                     elif data == "getcards":
-                        await self.send_cards(writer)
+                        async with self.lock:
+                            await self.send_cards(writer)
                         
-                    elif data.startswith("M"):
-                        await self.game.player_move(player, data[1:])
-                        await self.game.winner_check(player, self.players_cards[player])
-
-                    # else:
-                    #     serialized_game = GameSerialization.serialize(self.game)
-                    #     checksum = hashlib.sha256(serialized_game).hexdigest()
-                    #     message_bytes = checksum.encode()+serialized_game
-                    #     message_length = struct.pack("I", len(message_bytes))
-                    #     writer.write(message_length+message_bytes)
-                    #     await writer.drain()
                         
             except (asyncio.IncompleteReadError, BrokenPipeError) as e:
                 print(f"Error handling client {player}: {e}")
@@ -183,9 +177,6 @@ class Server:
                     self.players_cards[p_id] = [self.generate_card() for _ in range(int(cards_number))]
         except Exception as e:
             print(f"Error receiving initial data from player {p_id}: {e}")
-
-        if await self.game.all_connected():
-            asyncio.create_task(self.send_game())
 
         asyncio.create_task(self.active_client(reader, writer, p_id))
 
