@@ -246,7 +246,6 @@ class Client:
             self.screen.blit(text, text_rect)
                                   
     async def run(self):
-
         connected = all(self.game_state["players"])
 
         if not connected:
@@ -275,30 +274,18 @@ class Client:
             self.stop_event = False
 
     async def get_game(self):
-        # print("INSIDE get game")
-        # count = 0
-        # print(f"stop_event variable:{self.stop_event}")
         while self.stop_event:
             try:
                 game = await self.net.send("get")
-                # count += 1
-                # print(f"get SENT:{count}")
                 if not game:
                     print("Can not get the game state!")
                     break
                 else:
                     self.game_state = GameSerialization.deserialize(game)
-                    
-
             except asyncio.IncompleteReadError as e:
                 print(f"Getting game state error: {e}")
             
-            await asyncio.sleep(0.1)
-            # if 1 in self.game_state['result']:
-            #             await asyncio.sleep(2)
-            #             await self.stop()
-
-        print(f'Game Stoped!')
+            await asyncio.sleep(0.1)         
 
     async def get_cards(self):
         if not self.cards:
@@ -307,14 +294,12 @@ class Client:
                 if not cards_data:
                     print(f"Can not get cards!")
                 else:
-                    # self.cards = await self.game_state.deserialize_cards(cards_data)
                     self.cards = GameSerialization.deserialize_cards(cards_data)
                     self.game_rects = self.cards_rects()
             except asyncio.IncompleteReadError as e:
                 print(f"Getting cards error: {e}")
 
     async def handle_input(self):
-        # print("INSIDE handle input")
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -337,18 +322,14 @@ class Client:
             await asyncio.sleep(0.01)
 
     async def update_display(self):
-        # print("INSIDE update display")
         while True:
             self.screen.fill((255,255,255))
 
             if self.game_state:
                 await self.run()
-            # else:
-            #     print("NO GAME")
 
             pygame.display.update()
             clock.tick(60)
-
             await asyncio.sleep(0)
 
     async def run_game(self):

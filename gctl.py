@@ -13,9 +13,9 @@ class Game:
         self.random_num_counter = 10
         self.lock = asyncio.Lock()
 
-
     async def all_connected(self):
         return all(self.players)   
+    
     # Added with NARENJAK! :-)
     async def reset(self):
         async with self.lock:

@@ -29,7 +29,6 @@ class Server:
         return [[str(item) for item in row]for row in card]
     
     async def retry_game(self):
-        # print("Inside retry game")
         if self.try_var == self.players and 1 in self.game.result:
             await self.game.reset()
 
@@ -97,8 +96,6 @@ class Server:
                 break
             
     async def active_client(self, reader, writer, player):
-        
-        # count = 0
         while True:
             try:
                 raw_length = await reader.readexactly(4)
@@ -114,8 +111,6 @@ class Server:
                 else:
                     data = raw_data.decode()
                     if data == "get":
-                        # count += 1
-                        # print(f"get RECEIVED:{count}")
                         async with self.lock:
                             await self.send_game(writer)
 

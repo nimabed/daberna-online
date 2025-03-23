@@ -48,19 +48,20 @@ class Network:
         return message_bytes
 
     async def send_card(self):
-        data_recv = await self.received_all()
+        async with self.lock:
+            data_recv = await self.received_all()
         if await self.check_seri(data_recv):
             return data_recv[68:]
 
     async def send_game(self):
-        data_recv = await self.received_all()
-        
+        async with self.lock:
+            data_recv = await self.received_all()
         if await self.check_seri(data_recv):
             return data_recv[68:]
 
     async def send_reset(self):
         async with self.lock:
-            return await self.reader.read(1024)
+            return await self.reader.read(512)
 
     async def send(self, data):
         try:
