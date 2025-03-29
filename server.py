@@ -133,7 +133,7 @@ class Server:
                         
             except (asyncio.IncompleteReadError, BrokenPipeError) as e:
                 print(f"Error handling client {player}: {e}")
-                break
+            
 
         async with self.lock:
             self.game.players[player] = ""
@@ -188,7 +188,7 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server("192.168.1.9", 9999, 3)
+    server = Server("192.168.1.9", 9999, 2)
     asyncio.run(server.run())
 
 
