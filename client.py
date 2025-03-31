@@ -35,7 +35,6 @@ class Client:
         self.flash_period = 1000
         self.lock = asyncio.Lock()
         self.stop_event = True
-        # self.stop_event = asyncio.Event()
         self.last_time = pygame.time.get_ticks()
 
         # Screen
