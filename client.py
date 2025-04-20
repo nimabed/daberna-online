@@ -240,7 +240,7 @@ class Client:
             if self.reset_button > 1:
                 text = self.game_font.render("Waiting for opponents...", 1, (0,0,0))
             else:
-                text = self.game_font.render("Enter the number of cards you want", 1, (0,0,0))
+                text = self.game_font.render("Enter the number of cards", 1, (0,0,0))
             text_rect = text.get_rect(midbottom=(self.width/2,462))
             self.screen.blit(text, text_rect)
                                   

@@ -8,7 +8,7 @@ async def main():
             print("Name must contain at least 2 characters!")
         else:
             break               
-    client = Client("192.168.1.9", 9999, user_name, 2)
+    client = Client("192.168.1.9", 9999, user_name, 4)
     await client.network_init()
     await asyncio.sleep(0.1)
     await client.run_game()

@@ -101,6 +101,7 @@ class Server:
                 raw_length = await reader.readexactly(4)
                 if not raw_length:
                     print(f"Length not received, player {player} disconnected!")
+                    break
 
                 message_length = struct.unpack("I", raw_length)[0]
 
@@ -132,7 +133,8 @@ class Server:
                         
                         
             except (asyncio.IncompleteReadError, BrokenPipeError) as e:
-                print(f"Error handling client {player}: {e}")
+                print(f"Problem in receiving data from player {player}: {e}") 
+                break
             
 
         async with self.lock:
@@ -141,7 +143,7 @@ class Server:
             self.game.running = False
             writer.close()
             await writer.wait_closed()
-        print("Connection close!")
+        print(f"Player {player}'s connection closed!")
 
     async def handle_connection(self, reader, writer):
         addr, port = writer.get_extra_info("peername")
