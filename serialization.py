@@ -1,8 +1,12 @@
 import game_pb2
+from typing import Any, Dict, List
+
+# Type aliases
+Card = List[List[str]]
 
 class GameSerialization:
     @staticmethod
-    def serialize(game):
+    def serialize(game: Any) -> bytes:
         game_proto = game_pb2.Game()
         game_proto.players.extend(game.players)
         for move_list in game.moves:
@@ -21,7 +25,7 @@ class GameSerialization:
         return game_proto.SerializeToString()
     
     @staticmethod
-    def deserialize(game_bytes):
+    def deserialize(game_bytes: bytes) -> Dict[str, Any]:
         game_proto = game_pb2.Game()
         game_proto.ParseFromString(game_bytes)
         game = {
@@ -37,7 +41,7 @@ class GameSerialization:
         return game
 
     @staticmethod
-    def serialize_cards(cards_data):
+    def serialize_cards(cards_data: Dict[int, List[Card]]) -> bytes:
         proto_dict = game_pb2.DictCards()
         for player, cards in cards_data.items():
             proto_cards = game_pb2.OuterList()
@@ -52,7 +56,7 @@ class GameSerialization:
         return proto_dict.SerializeToString()
     
     @staticmethod
-    def deserialize_cards(data_bytes):
+    def deserialize_cards(data_bytes: bytes) -> Dict[int, List[Card]]:
         proto_dict = game_pb2.DictCards()
         proto_dict.ParseFromString(data_bytes)
         deserialized_dict = {}

@@ -1,14 +1,14 @@
 import asyncio
 from client import Client
 
-async def main():
+async def main() -> None:
     while True:
-        user_name = input("Enter your name: ")
+        user_name: str = input("Enter your name: ")
         if len(user_name) <= 1:
             print("Name must contain at least 2 characters!")
         else:
             break               
-    client = Client("192.168.1.9", 9999, user_name, 4)
+    client: Client = Client("192.168.1.9", 9999, user_name, 4)
     await client.network_init()
     await asyncio.sleep(0.1)
     await client.run_game()

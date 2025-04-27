@@ -1,67 +1,84 @@
 import sys
 import asyncio
 import pygame
+from pathlib import Path
+from typing import List, Optional, Dict, Tuple, Any
 
 from rects import Rects
 from setting import *
 from network import Network
 from serialization import GameSerialization
 
+# Type aliases
+Card = List[List[str]]
+Card_Rect = List[List[Rects]]
 
+pygame.mixer.pre_init()
 pygame.init()
-clock = pygame.time.Clock()
+clock: pygame.time.Clock = pygame.time.Clock()
 
 
 class Client:
-    def __init__(self, ip, port, name, cards_num):
-        self.ip = ip
-        self.port = port
-        self.cards_num = cards_num
-        self.name = name
+    def __init__(self, ip: str, port: int, name: str, cards_num: int) -> None:
+        self.ip: str = ip
+        self.port: int = port
+        self.cards_num: int = cards_num
+        self.name: str = name
 
         # Network setup
-        self.net = None
-        self.p_id = None
-        self.number_of_players = None
+        self.net: Optional[Network] = None
+        self.p_id: Optional[int] = None
+        self.number_of_players: Optional[int] = None
         
         # Games variables
-        self.game_state = None
-        self.cards = None
-        self.game_rects = None
-        self.get_pos = None
-        self.reset_button = 0
-        self.marked_rects = []
-        self.result_visible = False
-        self.flash_period = 1000
-        self.lock = asyncio.Lock()
-        self.stop_event = True
-        self.last_time = pygame.time.get_ticks()
+        self.game_state: Optional[Dict[str, Any]] = None
+        self.cards: Optional[Dict[int, List[Card]]] = None
+        self.game_rects: Optional[Dict[int, Card_Rect]] = None
+        self.get_pos: Optional[Tuple[int, int]] = None
+        self.reset_button: int = 0
+        self.marked_rects: List[Rects] = []
+        self.result_visible: bool = False
+        self.flash_period: int = 1000
+        self.counter: int = 3
+        self.lock: asyncio.Lock = asyncio.Lock()
+        self.stop_event: bool = True
+        self.last_time: int = pygame.time.get_ticks()
 
         # Screen
-        self.width = 1248
-        self.height = 692
+        self.width: int = 1248
+        self.height: int = 692
 
-        self.screen = pygame.display.set_mode((self.width, self.height))
+        self.screen: pygame.Surface = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption('Daberna')
 
         # Font setup
-        self.game_font = pygame.font.SysFont("FreeSerif", 30)
-        self.opponent_font = pygame.font.SysFont("FreeSerif", 25)
-        self.random_num_font = pygame.font.SysFont("Lato Black", 70)
+        self.game_font: pygame.font.Font = pygame.font.SysFont("FreeSerif", 30)
+        self.opponent_font: pygame.font.Font = pygame.font.SysFont("FreeSerif", 25)
+        self.random_num_font: pygame.font.Font = pygame.font.SysFont("Lato Black", 70)
 
-    async def network_init(self):
+        # Sound setup
+        self.played: bool = False
+        self.cd: Path = Path(__file__).parent.resolve()
+        self.checked: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/checked.mp3'))
+        self.wrong: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/wrong.wav'))
+        self.win: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/win.wav'))
+        self.lose: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/lose.mp3'))
+        self.count3: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/count1.wav'))
+        self.count1: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/count2.wav'))
+
+    async def network_init(self) -> None:
         self.net = Network(self.ip, self.port)
         players_info = await self.net.connect()
         self.p_id = int(players_info[0])
         self.number_of_players = int(players_info[1])
         await self.net.send(f"{self.name}:{self.cards_num}")
 
-    def ready_state(self):
+    def ready_state(self) -> None:
         text = self.game_font.render("Waiting for connections....", 1, (0,0,0))
         text_rect = text.get_rect(center=(self.width/2, self.height/2))
         self.screen.blit(text, text_rect)
                 
-    def cards_rects(self):
+    def cards_rects(self) -> Dict[int, Card_Rect]:
         game_rects_dict = {}
         select = -1
         for player, card in self.cards.items():
@@ -87,7 +104,7 @@ class Client:
             game_rects_dict[player] = player_rects_list
         return game_rects_dict
                
-    def generate_rects(self, list, offset_x, offset_y, font_size, rect_size):
+    def generate_rects(self, list: Card, offset_x: int, offset_y: int, font_size: int, rect_size: int) -> List[Rects]:
         rect_card = []
         for row in range(9):
             for col in range(3):
@@ -96,16 +113,20 @@ class Client:
                 rect_card.append(Rects(x, y, rect_size, rect_size, list[row][col], font_size))
         return rect_card
             
-    async def rect_check(self):
+    async def rect_check(self) -> None:
         if self.get_pos:
             for i in range(len(self.game_rects[self.p_id])):
                 for rect in self.game_rects[self.p_id][i]:
                     if rect.clicked(self.get_pos) and rect.text == str(self.game_state["rand_num"]):
                         self.marked_rects.append(rect)
+                        pygame.mixer.Sound.play(self.checked)
                         await self.net.send(f"M{rect.text},{i}")
+                        self.get_pos = None
+                        return None
+            pygame.mixer.Sound.play(self.wrong)
             self.get_pos = None
 
-    def draw_separate_lines(self):
+    def draw_separate_lines(self) -> None:
         pygame.draw.line(self.screen, (0,0,0), (0,472), (self.width, 472), 2)
 
         if self.number_of_players == 3:
@@ -119,7 +140,7 @@ class Client:
             for i in range(1,4):
                 pygame.draw.line(self.screen, (0,0,0), ((self.width/4)*i, 472), ((self.width/4)*i, self.height), 2)
         
-    def draw_rects(self):
+    def draw_rects(self) -> None:
         self.draw_separate_lines()
         select = -1
         for player, cards in self.game_rects.items():
@@ -150,17 +171,17 @@ class Client:
 
             self.screen.blit(text, text_rect)
 
-    def draw_marked_rects(self):
+    def draw_marked_rects(self) -> None:
         if self.marked_rects:
             for rect in self.marked_rects:
                 rect.draw_lines(self.screen)
 
-    def draw_opponent_moves(self):
+    def draw_opponent_moves(self) -> None:
         for player, all_player_cards in self.game_rects.items():
             if player != self.p_id and self.game_state["moves"][player]:
                 [rect.fill_rect(self.screen) for rect_list in all_player_cards for rect in rect_list if (rect.text, str(all_player_cards.index(rect_list))) in self.game_state["moves"][player]] 
 
-    async def flash_result(self, text):
+    async def flash_result(self, text: pygame.font.Font) -> None:
         reset_quit_t = self.game_font.render("Press SPACE to reset or Q to quit", 1, (0,0,0))
         reset_quit_t_rect = reset_quit_t.get_rect(midbottom=(self.width/2, 462))
         self.screen.blit(reset_quit_t, reset_quit_t_rect)
@@ -174,7 +195,15 @@ class Client:
             self.screen.blit(text, (20, 432))
             self.screen.blit(text, (self.width-text.get_width()-20, 432))
 
-    async def draw_result(self):
+    async def win_lose_sound(self) -> None:
+        if not self.played:
+            if self.game_state["result"].index(1) == self.p_id:
+                pygame.mixer.Sound.play(self.win)
+            else:
+                pygame.mixer.Sound.play(self.lose)
+            self.played = True
+
+    async def draw_result(self) -> None:
         if not self.reset_button:
             if self.game_state["result"].count(1) == 1:
                 idx = self.game_state["result"].index(1)
@@ -187,9 +216,10 @@ class Client:
                 text = self.game_font.render("Game is tie", 1, (0,200,0))
 
             await self.flash_result(text)
+            await self.win_lose_sound()
             await self.stop()
                
-    async def draw_random_num(self):
+    async def draw_random_num(self) -> None:
         text_num = self.random_num_font.render(str(self.game_state["rand_num"]), 1, (255,0,0))
         text_timer = self.game_font.render(f"({self.game_state['random_num_counter']+1}s)", 1, (0,0,0))
         text_timer_rect = text_timer.get_rect(midleft=(text_num.get_width(),text_num.get_height()/2))
@@ -200,17 +230,32 @@ class Client:
         merged_surface_rect = merged_surface.get_rect(midbottom=(self.width/2+20, 462))
         self.screen.blit(merged_surface, merged_surface_rect)
 
-    def draw_start_counter(self):
-        text1 = self.game_font.render(f"Starting in ", 1, (0,0,0))
-        text2 = self.game_font.render(f"{self.game_state['start_counter']}s", 1, (255,0,0))
-        merged_surface = pygame.Surface((text1.get_width()+text2.get_width(), max(text1.get_height(),text2.get_height())))
-        merged_surface.fill((255,255,255))
-        merged_surface.blit(text1, (0,0))
-        merged_surface.blit(text2, (text1.get_width(),0))
-        merged_surface_rect = merged_surface.get_rect(midbottom=(self.width/2, 462))
-        self.screen.blit(merged_surface, merged_surface_rect)
-        
-    async def reset_request(self):
+    async def countdown_sound(self, num: int) -> None:
+        if num == self.counter and self.counter >= 1:
+            pygame.mixer.Sound.play(self.count3)
+            self.counter -= 1
+        elif num == self.counter and self.counter == 0:
+            pygame.mixer.Sound.play(self.count1)
+            self.counter -= 1
+
+    async def draw_start_counter(self) -> None:
+        countdown = self.game_state['start_counter']
+        if countdown == 0:
+            text3 = self.random_num_font.render("GO..", 1, (255,0,0))
+            text3_rect = text3.get_rect(midbottom=(self.width/2, 462))
+            self.screen.blit(text3, text3_rect)
+        else:
+            text1 = self.game_font.render(f"Starting in ", 1, (0,0,0))
+            text2 = self.game_font.render(f"{countdown}s", 1, (255,0,0))
+            merged_surface = pygame.Surface((text1.get_width()+text2.get_width(), max(text1.get_height(),text2.get_height())))
+            merged_surface.fill((255,255,255))
+            merged_surface.blit(text1, (0,0))
+            merged_surface.blit(text2, (text1.get_width(),0))
+            merged_surface_rect = merged_surface.get_rect(midbottom=(self.width/2, 462))
+            self.screen.blit(merged_surface, merged_surface_rect)
+        await self.countdown_sound(countdown)
+
+    async def reset_request(self) -> None:
         self.reset_button += 1
         while True:
             if not self.game_state['running'] and 1 in self.game_state['result']:
@@ -226,16 +271,18 @@ class Client:
                     await self.net.send(num+"reset")
                     response = await self.net.send_reset()
                     if response == b'start':
+                        self.counter = 3
                         self.stop_event = True
+                        self.played = False
                         asyncio.create_task(self.get_game())
                         break
                     else:
                         print(f"Can not receive reset response:{response}")
                     await asyncio.sleep(0.1)
-                    return
+                    return None
             await asyncio.sleep(0.3)
             
-    async def draw_reset(self):
+    async def draw_reset(self) -> None:
         if self.reset_button:
             if self.reset_button > 1:
                 text = self.game_font.render("Waiting for opponents...", 1, (0,0,0))
@@ -244,7 +291,7 @@ class Client:
             text_rect = text.get_rect(midbottom=(self.width/2,462))
             self.screen.blit(text, text_rect)
                                   
-    async def run(self):
+    async def run(self) -> None:
         connected = all(self.game_state["players"])
 
         if not connected:
@@ -254,7 +301,7 @@ class Client:
             await self.get_cards()
             self.marked_rects.clear()
             self.draw_rects()
-            self.draw_start_counter()
+            await self.draw_start_counter()
             self.reset_button = 0
             
         else:
@@ -268,11 +315,11 @@ class Client:
             self.draw_marked_rects()
             self.draw_opponent_moves()
             
-    async def stop(self):
+    async def stop(self) -> None:
         if not self.reset_button and 1 in self.game_state['result']:
             self.stop_event = False
 
-    async def get_game(self):
+    async def get_game(self) -> None:
         while self.stop_event:
             try:
                 game = await self.net.send("get")
@@ -286,7 +333,7 @@ class Client:
             
             await asyncio.sleep(0.1)         
 
-    async def get_cards(self):
+    async def get_cards(self) -> None:
         if not self.cards:
             try:
                 cards_data = await self.net.send("getcards")
@@ -298,7 +345,7 @@ class Client:
             except asyncio.IncompleteReadError as e:
                 print(f"Getting cards error: {e}")
 
-    async def handle_input(self):
+    async def handle_input(self) -> None:
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -320,7 +367,7 @@ class Client:
 
             await asyncio.sleep(0.01)
 
-    async def update_display(self):
+    async def update_display(self) -> None:
         while True:
             self.screen.fill((255,255,255))
 
@@ -331,7 +378,7 @@ class Client:
             clock.tick(60)
             await asyncio.sleep(0)
 
-    async def run_game(self):
+    async def run_game(self) -> None:
         asyncio.create_task(self.get_game())
         await asyncio.gather(self.handle_input(),
                              self.update_display())

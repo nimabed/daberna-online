@@ -1,70 +1,73 @@
 import asyncio
 import hashlib
 import struct
+from typing import List, Optional
 
 class Network:
-    def __init__(self, ip, port):
-        self.ip = ip
-        self.port = port
-        self.reader = None
-        self.writer = None
-        self.lock = asyncio.Lock()
+    def __init__(self, ip: str, port: int) -> None:
+        self.ip: str = ip
+        self.port: int = port
+        self.reader: Optional[asyncio.StreamReader] = None
+        self.writer: Optional[asyncio.StreamWriter] = None
+        self.lock: asyncio.Lock = asyncio.Lock()
 
-    async def connect(self):
+    async def connect(self) -> Optional[List[str]]:
         self.reader, self.writer = await asyncio.open_connection(self.ip, self.port)
         try:
-            data = await self.reader.read(1024)
+            data: bytes = await self.reader.read(1024)
             return data.decode().split(":")
         except asyncio.IncompleteReadError as e:
             print(f"Connection error: {e}")
-            return 
+            return None 
 
-    async def check_seri(self, check_game_byte):
-        received_checksum = hashlib.sha256(check_game_byte[68:]).hexdigest()
+    async def check_seri(self, check_game_byte: bytes) -> bool:
+        received_checksum: str = hashlib.sha256(check_game_byte[68:]).hexdigest()
         return received_checksum.encode() == check_game_byte[4:68]
 
-    async def received_message(self, count_byte):
-        data_bytes = bytearray()
+    async def received_message(self, count_byte: int) -> Optional[bytes]:
+        data_bytes: bytearray = bytearray()
 
         while len(data_bytes) < count_byte:
-            packet = await self.reader.read(count_byte - len(data_bytes))
+            packet: bytes = await self.reader.read(count_byte - len(data_bytes))
             if not packet:
-                return
+                return None
             data_bytes.extend(packet)
             
         return bytes(data_bytes)
     
-    async def received_all(self):
+    async def received_all(self) -> Optional[bytes]:
         async with self.lock:
-            bytes_length = await self.received_message(4)
+            bytes_length: Optional[bytes] = await self.received_message(4)
             if not bytes_length:
-                return
-            message_length = struct.unpack("I", bytes_length)[0]
+                return None
+            message_length: int = struct.unpack("I", bytes_length)[0]
 
-            message_bytes = await self.received_message(message_length)
+            message_bytes: Optional[bytes] = await self.received_message(message_length)
             if not message_bytes:
-                return
+                return None
         
         return message_bytes
 
-    async def send_card(self):
-        data_recv = await self.received_all()
+    async def send_card(self) -> Optional[bytes]:
+        data_recv: Optional[bytes] = await self.received_all()
         if await self.check_seri(data_recv):
             return data_recv[68:]
+        return None
 
-    async def send_game(self):
-        data_recv = await self.received_all()
+    async def send_game(self) -> Optional[bytes]:
+        data_recv: Optional[bytes] = await self.received_all()
         if await self.check_seri(data_recv):
             return data_recv[68:]
+        return None
 
-    async def send_reset(self):
+    async def send_reset(self) -> Optional[bytes]:
         async with self.lock:
             return await self.reader.read(512)
 
-    async def send(self, data):
+    async def send(self, data: str) -> Optional[bytes]:
         try:
-            message = data.encode()
-            length = struct.pack("I", len(message))
+            message: bytes = data.encode()
+            length: bytes = struct.pack("I", len(message))
             self.writer.write(length+message)
             await self.writer.drain()
 
@@ -76,4 +79,6 @@ class Network:
 
         except asyncio.IncompleteReadError as e:
             print(f"Sending error: {e}")
-            return
+            return None
+        
+        return None

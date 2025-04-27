@@ -4,31 +4,35 @@ import hashlib
 import struct
 from gctl import Game
 from serialization import GameSerialization
+from typing import List, Optional, Dict
+
+# Type aliases
+Card = List[List[str]] 
 
 class Server:
-    def __init__(self, host, port, num_of_players):
-        self.host = host
-        self.port = port
-        self.server = None 
+    def __init__(self, host: str, port: int, num_of_players: int) -> None:
+        self.host: str = host
+        self.port: int = port
+        self.server: Optional[asyncio.Server] = None 
 
         # Variables
-        self.players = num_of_players
-        self.game = Game(num_of_players)
-        self.players_cards = {}
-        self.clients = []
-        self.try_var = 0
-        self.number_of_sent_cards = 0
-        self.lock = asyncio.Lock()
+        self.players: int = num_of_players
+        self.game: Game = Game(num_of_players)
+        self.players_cards: Dict[int, List[Card]] = {}
+        self.clients: List[asyncio.StreamWriter] = []
+        self.try_var: int = 0
+        self.number_of_sent_cards: int = 0
+        self.lock: asyncio.Lock = asyncio.Lock()
 
-    def generate_card(self):
-        card = []
+    def generate_card(self) -> Card:
+        card: Card = []
         for i in range(9):
             card.append(random.sample(range(1 + i*10, 11 + i*10), 3))
         for _ in range(10):
             card[random.randint(0,8)][random.randint(0,2)] = "*"
         return [[str(item) for item in row]for row in card]
     
-    async def retry_game(self):
+    async def retry_game(self) -> None:
         if self.try_var == self.players and 1 in self.game.result:
             await self.game.reset()
 
@@ -37,11 +41,11 @@ class Server:
                 await client.drain()
                 await asyncio.sleep(0.5)
 
-    async def send_cards(self, client):
-        players_cards_bytes = GameSerialization.serialize_cards(self.players_cards)
-        checksum_cards = 'card' + hashlib.sha256(players_cards_bytes).hexdigest()
-        message_bytes = checksum_cards.encode() + players_cards_bytes
-        message_length = struct.pack("I", len(message_bytes))
+    async def send_cards(self, client: asyncio.StreamWriter) -> None:
+        players_cards_bytes: bytes = GameSerialization.serialize_cards(self.players_cards)
+        checksum_cards: str = 'card' + hashlib.sha256(players_cards_bytes).hexdigest()
+        message_bytes: bytes = checksum_cards.encode() + players_cards_bytes
+        message_length: bytes = struct.pack("I", len(message_bytes))
 
         try:
             client.write(message_length + message_bytes)
@@ -54,25 +58,25 @@ class Server:
         if self.number_of_sent_cards == self.players:
             await asyncio.sleep(0.1)
             asyncio.create_task(self.random_numbers())
-            self.number_of_sent_cards = 0   
+            self.number_of_sent_cards: int = 0   
     
-    async def send_game(self, client):        
-        serialized_game = GameSerialization.serialize(self.game)
-        checksum = 'game' + hashlib.sha256(serialized_game).hexdigest()
-        message_bytes = checksum.encode() + serialized_game
-        message_length = struct.pack("I", len(message_bytes))
+    async def send_game(self, client: asyncio.StreamWriter) -> None:        
+        serialized_game: bytes = GameSerialization.serialize(self.game)
+        checksum: str = 'game' + hashlib.sha256(serialized_game).hexdigest()
+        message_bytes: bytes = checksum.encode() + serialized_game
+        message_length: bytes = struct.pack("I", len(message_bytes))
 
         client.write(message_length+message_bytes)
         await client.drain()
 
-    async def random_numbers(self):
-        numbers = [_ for _ in range(1,91)]
-        copy_counter = self.game.random_num_counter
+    async def random_numbers(self) -> None:
+        numbers: List[int] = [_ for _ in range(1,91)]
+        copy_counter: int = self.game.random_num_counter
 
         while True:
             if self.game.running and len(self.clients) == self.players:
-                num = random.choice(numbers)
-                self.game.rand_num = num
+                num: int = random.choice(numbers)
+                self.game.rand_num: int = num
                 numbers.remove(num)
                 for i in range(copy_counter):
                     self.game.random_num_counter -= 1
@@ -80,37 +84,38 @@ class Server:
                         async with self.lock:
                             self.game.rand_num = None
                             self.game.running = False
-                            self.reset = True
-                            return
+                            self.reset: bool = True
+                            return None
                     await asyncio.sleep(1)
-                self.game.random_num_counter = copy_counter
+                self.game.random_num_counter: int = copy_counter
 
             elif self.try_var == self.players:
                 self.game.start_counter -= 1
-                await asyncio.sleep(2)
-                if self.game.start_counter == 1:
+                await asyncio.sleep(1.5)
+                if self.game.start_counter == 0:
                     async with self.lock:
                         self.game.running = True
-                        self.try_var = 0
+                        self.try_var: int = 0
+                        
             else:
                 break
             
-    async def active_client(self, reader, writer, player):
+    async def active_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter, player: int) -> None:
         while True:
             try:
-                raw_length = await reader.readexactly(4)
+                raw_length: bytes = await reader.readexactly(4)
                 if not raw_length:
                     print(f"Length not received, player {player} disconnected!")
                     break
 
-                message_length = struct.unpack("I", raw_length)[0]
+                message_length: int = struct.unpack("I", raw_length)[0]
 
-                raw_data = await reader.read(message_length)
+                raw_data: bytes = await reader.read(message_length)
                 if not raw_data:
                     print(f"Player {player} disconnected!")
                     break
                 else:
-                    data = raw_data.decode()
+                    data: str = raw_data.decode()
                     if data == "get":
                         async with self.lock:
                             await self.send_game(writer)
@@ -145,9 +150,9 @@ class Server:
             await writer.wait_closed()
         print(f"Player {player}'s connection closed!")
 
-    async def handle_connection(self, reader, writer):
+    async def handle_connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         addr, port = writer.get_extra_info("peername")
-        p_id = len(self.clients)
+        p_id: int = len(self.clients)
         
         self.clients.append(writer)
         self.try_var += 1
@@ -157,16 +162,16 @@ class Server:
         print(f"Player {p_id} with address {addr}:{port} added!")
         
         try:
-            data_length_byte = await reader.readexactly(4)
+            data_length_byte: bytes = await reader.readexactly(4)
             if not data_length_byte:
                 print("Could not receive length of cards")
 
-            message_length = struct.unpack("I", data_length_byte)[0]
+            message_length: int = struct.unpack("I", data_length_byte)[0]
 
-            raw_data = await reader.read(message_length)
+            raw_data: bytes = await reader.read(message_length)
             if not raw_data:
                 print("Could not receive number of cards!")
-                return
+                return None
             else:
                 name, cards_number = raw_data.decode().split(":")
                 async with self.lock:
@@ -177,9 +182,9 @@ class Server:
 
         asyncio.create_task(self.active_client(reader, writer, p_id))
 
-    async def run(self):
+    async def run(self) -> None:
         try:
-            self.server = await asyncio.start_server(self.handle_connection, self.host, self.port)
+            self.server: Optional[asyncio.Server] = await asyncio.start_server(self.handle_connection, self.host, self.port)
         except Exception as e:
             print(f"Binding server error: {e}")
 
@@ -190,7 +195,7 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server("192.168.1.9", 9999, 2)
+    server: Server = Server("192.168.1.9", 9999, 2)
     asyncio.run(server.run())
 
 
