@@ -2,9 +2,10 @@ import pygame
 from typing import Tuple
 
 class Rects:
-    def __init__(self, x: int, y: int, width: int, height: int, text: str, text_size: int) -> None:
+    def __init__(self, x: int, y: int, width: int, height: int, text: str, text_size: int, row: int) -> None:
         self.x: int = x
         self.y: int = y
+        self.row = row
         self.text: str = text
         self.width: int = width
         self.height: int = height

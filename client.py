@@ -44,10 +44,14 @@ class Client:
         self.stop_event: bool = True
         self.last_time: int = pygame.time.get_ticks()
 
+        # Win check analyze
+        self.cards_analyze: Optional[Tuple[Tuple[int, int, int], ...]] = None
+        self.marked_rows: List[List[int]] = [[0, 0, 0] for _ in range(cards_num)]
+        self.last_analyze: int = 0
+
         # Screen
         self.width: int = 1248
         self.height: int = 692
-
         self.screen: pygame.Surface = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption('Daberna')
 
@@ -110,21 +114,52 @@ class Client:
             for col in range(3):
                 x = offset_x + row * rect_size
                 y = offset_y + col * rect_size
-                rect_card.append(Rects(x, y, rect_size, rect_size, list[row][col], font_size))
+                rect_card.append(Rects(x, y, rect_size, rect_size, list[row][col], font_size, col))
         return rect_card
-            
+
+    def card_analize(self, card: Card) -> Tuple[int, int, int]:
+        l = []
+        for i in range(3):
+            count = 0
+            for j in range(9):
+                if card[j][i].isdigit():
+                    count += 1
+            l.append(count)
+        return tuple(l)
+        
+    def win_chance(self, row: int, col: int) -> None:
+        num_of_digit = self.cards_analyze[row][col]
+        num_of_marked = self.marked_rows[row][col]
+        number = round((num_of_marked/num_of_digit)*100)
+        if number > self.last_analyze:
+            self.last_analyze = number
+        return None
+        
     async def rect_check(self) -> None:
         if self.get_pos:
             for i in range(len(self.game_rects[self.p_id])):
                 for rect in self.game_rects[self.p_id][i]:
                     if rect.clicked(self.get_pos) and rect.text == str(self.game_state["rand_num"]):
                         self.marked_rects.append(rect)
+                        self.marked_rows[i][rect.row] += 1
+                        self.win_chance(i, rect.row)
                         pygame.mixer.Sound.play(self.checked)
                         await self.net.send(f"M{rect.text},{i}")
                         self.get_pos = None
                         return None
             pygame.mixer.Sound.play(self.wrong)
             self.get_pos = None
+
+    def draw_win_chance(self) -> None:
+        if self.last_analyze < 100:
+            text1 = self.game_font.render("Wining chance: ", 1, (0, 0, 0))
+            text2 = self.game_font.render(f"{self.last_analyze}%", 1, (255, 0, 0))
+            merged_surface = pygame.Surface((text1.get_width() + text2.get_width(), max(text1.get_height(), text2.get_height())))
+            merged_surface.fill((255,255,255))
+            merged_surface.blit(text1, (0,0))
+            merged_surface.blit(text2, (text1.get_width(),0))
+            merged_surface_rect = merged_surface.get_rect(topright=(self.width-10, 5))
+            self.screen.blit(merged_surface, merged_surface_rect)
 
     def draw_separate_lines(self) -> None:
         pygame.draw.line(self.screen, (0,0,0), (0,472), (self.width, 472), 2)
@@ -272,6 +307,7 @@ class Client:
                     response = await self.net.send_reset()
                     if response == b'start':
                         self.counter = 3
+                        self.last_analyze = 0
                         self.stop_event = True
                         self.played = False
                         asyncio.create_task(self.get_game())
@@ -309,6 +345,7 @@ class Client:
             if self.game_state['rand_num']:
                 await self.draw_random_num()
                 await self.rect_check()
+                self.draw_win_chance()
             else:
                 await self.draw_result()
                 await self.draw_reset()
@@ -342,6 +379,8 @@ class Client:
                 else:
                     self.cards = GameSerialization.deserialize_cards(cards_data)
                     self.game_rects = self.cards_rects()
+                    self.cards_analyze = tuple((self.card_analize(card) for card in self.cards[self.p_id]))
+                    # print((self.cards_analyze)[0][0])
             except asyncio.IncompleteReadError as e:
                 print(f"Getting cards error: {e}")
 
