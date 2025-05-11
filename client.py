@@ -19,16 +19,15 @@ clock: pygame.time.Clock = pygame.time.Clock()
 
 
 class Client:
-    def __init__(self, ip: str, port: int, name: str, cards_num: int) -> None:
-        self.ip: str = ip
-        self.port: int = port
+    def __init__(self, ip: str, port: int, cards_num: int, name: str) -> None:
+        self.number_of_players = None
         self.cards_num: int = cards_num
         self.name: str = name
 
         # Network setup
-        self.net: Optional[Network] = None
+        self.net: Network = Network(ip, port)
         self.p_id: Optional[int] = None
-        self.number_of_players: Optional[int] = None
+        
         
         # Games variables
         self.game_state: Optional[Dict[str, Any]] = None
@@ -70,12 +69,20 @@ class Client:
         self.count3: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/count1.wav'))
         self.count1: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/count2.wav'))
 
-    async def network_init(self) -> None:
-        self.net = Network(self.ip, self.port)
-        players_info = await self.net.connect()
-        self.p_id = int(players_info[0])
-        self.number_of_players = int(players_info[1])
-        await self.net.send(f"{self.name}:{self.cards_num}")
+
+
+    async def network_init(self, command: str, p_num_or_sid: int | str) -> None:
+        data = await self.net.connect(command, p_num_or_sid, self.cards_num, self.name)
+        if command == "JOIN":
+            self.number_of_players= int(data[0])
+            if self.number_of_players == 0:
+                print("Group is full!")
+                return None
+            self.p_id = int(data[1])
+        else:
+            self.number_of_players = p_num_or_sid
+            self.p_id = int(data[1])
+            print(f"Session id: {data[0]}")
 
     def ready_state(self) -> None:
         text = self.game_font.render("Waiting for connections....", 1, (0,0,0))
@@ -329,7 +336,6 @@ class Client:
                                   
     async def run(self) -> None:
         connected = all(self.game_state["players"])
-
         if not connected:
             self.ready_state()
 
