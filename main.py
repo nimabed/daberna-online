@@ -3,13 +3,14 @@ from client import Client
 
 
 async def main() -> None:
+    print("====WELCOME TO DABERNA====")
     while True:
-        cmd: str = input("Enter command:(C/J) ").upper()
+        cmd: str = input("You want to CREATE or JOIN an existing room?(C/J) ").upper()
         username: str = input("Enter your name: ")
-        cards: int = int(input("how many card do you want?(1-4) "))
+        cards: int = int(input("How many card do you want?(1-4) "))
         if cmd == "C":
             command = "CREATE"
-            players_num : int = int(input("Enter players number:(2-4) "))
+            players_num : int = int(input("Enter the capacity of room:(2-4) "))
         elif cmd == "J":
             command = "JOIN"
             sid : str = input("Enter group ID: ")

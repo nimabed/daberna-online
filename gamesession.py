@@ -1,6 +1,5 @@
 import asyncio
 import random
-import hashlib
 import struct
 from serialization import GameSerialization
 from dataclasses import dataclass, field
@@ -43,8 +42,7 @@ class GameSession:
 
     async def send_cards(self, client: asyncio.StreamWriter) -> None:
         players_cards_bytes: bytes = GameSerialization.serialize_cards(self.players_cards)
-        checksum_cards: str = 'card' + hashlib.sha256(players_cards_bytes).hexdigest()
-        message_bytes: bytes = checksum_cards.encode() + players_cards_bytes
+        message_bytes: bytes = 'card'.encode() + players_cards_bytes
         message_length: bytes = struct.pack("I", len(message_bytes))
 
         try:
@@ -62,8 +60,7 @@ class GameSession:
     
     async def send_game(self, client: asyncio.StreamWriter) -> None:        
         serialized_game: bytes = GameSerialization.serialize(self.game)
-        checksum: str = 'game' + hashlib.sha256(serialized_game).hexdigest()
-        message_bytes: bytes = checksum.encode() + serialized_game
+        message_bytes: bytes = 'game'.encode() + serialized_game
         message_length: bytes = struct.pack("I", len(message_bytes))
 
         client.write(message_length+message_bytes)

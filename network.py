@@ -1,5 +1,4 @@
 import asyncio
-import hashlib
 import struct
 from typing import List, Optional
 
@@ -27,9 +26,6 @@ class Network:
             print(f"Connection error: {e}")
             return None 
 
-    async def check_seri(self, check_game_byte: bytes) -> bool:
-        received_checksum: str = hashlib.sha256(check_game_byte[68:]).hexdigest()
-        return received_checksum.encode() == check_game_byte[4:68]
 
     async def received_message(self, count_byte: int) -> Optional[bytes]:
         data_bytes: bytearray = bytearray()
@@ -55,17 +51,13 @@ class Network:
         
         return message_bytes
 
-    async def send_card(self) -> Optional[bytes]:
+    async def send_card(self) -> bytes:
         data_recv: Optional[bytes] = await self.received_all()
-        if await self.check_seri(data_recv):
-            return data_recv[68:]
-        return None
+        return data_recv[4:]
 
-    async def send_game(self) -> Optional[bytes]:
+    async def send_game(self) -> bytes:
         data_recv: Optional[bytes] = await self.received_all()
-        if await self.check_seri(data_recv):
-            return data_recv[68:]
-        return None
+        return data_recv[4:]
 
     async def send_reset(self) -> Optional[bytes]:
         async with self.lock:

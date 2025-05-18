@@ -43,10 +43,11 @@ class Server:
         session["current_members"] += 1
         return players, p_id
         
-    async def remove_session(self, sid: str, p_nums: int) -> None:
+    async def remove_session(self, p_name: str, sid: str, p_nums: int) -> None:
         session: Dict[str, Any] = self.sessions[sid]
         session["current_members"] -= 1
-        print(f"Current members on session {sid}: {session['current_members']}")
+        max : int = session['max_members']
+        print(f"{p_name} left group {sid}, Current members: {session['current_members']} || Remaining: {max - session['current_members']}")
         if not p_nums:
             del self.sessions[sid]
             print(f"Session {sid} was deleted!")
@@ -54,7 +55,8 @@ class Server:
 
     def task_callback(self, task: asyncio.Task) -> None:
         result: Tuple[str, int] = task.result()
-        asyncio.create_task(self.remove_session(*result))
+        name: str = task.get_name()
+        asyncio.create_task(self.remove_session(name, *result))
 
     async def handle_connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         addr, port = writer.get_extra_info("peername")
@@ -80,20 +82,20 @@ class Server:
                     session["game_session"].try_var += 1
                     session["current_members"] += 1
                     session["game_session"].players_cards[user_id] = [session["game_session"].generate_card() for _ in range(int(parts[1]))]
-                    print(f"Session {sid} created successfully!")
+                    print(f"Group {sid} created by {parts[-1]}, Capacity: {session['max_members']}")
                     writer.write(f"{sid}:{user_id}".encode())
                     await writer.drain()       
 
                 elif command == "JOIN" and parts[0] in self.sessions:
                     session = self.sessions[parts[0]]
                     if session["current_members"] == session["max_members"]:
-                        print("Group has been occupied!")
+                        print(f"Group {session['id']} has been occupied, Members: {session['current_members']}")
                         writer.write("0:0".encode())
                         await writer.drain()
                         return None
                     else:
                         players, user_id = await self.join_session(writer, session, *parts[1:])
-                        print(f"Client added to {parts[0]}. Current members: {session['current_members']}")
+                        print(f"{parts[-1]} added to {parts[0]}'s group, Remaining: {session['max_members'] - session['current_members']}")
                         writer.write(f"{players}:{user_id}".encode())
                         await writer.drain()
                 else:
@@ -105,8 +107,7 @@ class Server:
             return None
         
         if session:
-            task = asyncio.create_task(session["game_session"].active_client(reader, writer, user_id, session["id"]))
-            # print(f"TASK ==> {task}")
+            task = asyncio.create_task(session["game_session"].active_client(reader, writer, user_id, session["id"]), name=parts[-1])
             task.add_done_callback(self.task_callback)
 
     async def run(self) -> None:

@@ -27,7 +27,8 @@ class Client:
         # Network setup
         self.net: Network = Network(ip, port)
         self.p_id: Optional[int] = None
-        
+        self.room: str = None
+        self.cmd: str = None
         
         # Games variables
         self.game_state: Optional[Dict[str, Any]] = None
@@ -37,6 +38,8 @@ class Client:
         self.reset_button: int = 0
         self.marked_rects: List[Rects] = []
         self.result_visible: bool = False
+        self.ready: bool = True
+        self.start: Optional[int] = None
         self.flash_period: int = 1000
         self.counter: int = 3
         self.lock: asyncio.Lock = asyncio.Lock()
@@ -55,6 +58,7 @@ class Client:
         pygame.display.set_caption('Daberna')
 
         # Font setup
+        self.room_font: pygame.font.Font = pygame.font.SysFont("FreeSerif", 18)
         self.game_font: pygame.font.Font = pygame.font.SysFont("FreeSerif", 30)
         self.opponent_font: pygame.font.Font = pygame.font.SysFont("FreeSerif", 25)
         self.random_num_font: pygame.font.Font = pygame.font.SysFont("Lato Black", 70)
@@ -66,28 +70,82 @@ class Client:
         self.wrong: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/wrong.wav'))
         self.win: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/win.wav'))
         self.lose: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/lose.mp3'))
-        self.count3: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/count1.wav'))
-        self.count1: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/count2.wav'))
+        self.count3: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/count0.wav'))
+        self.count0: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/count2.wav'))
 
-
+        # Image setup
+        self.checkmark = pygame.image.load(str(self.cd / 'images/icon_checkmark.png'))
 
     async def network_init(self, command: str, p_num_or_sid: int | str) -> None:
         data = await self.net.connect(command, p_num_or_sid, self.cards_num, self.name)
+        self.cmd = command
         if command == "JOIN":
             self.number_of_players= int(data[0])
             if self.number_of_players == 0:
                 print("Group is full!")
                 return None
             self.p_id = int(data[1])
+            self.room = p_num_or_sid
         else:
             self.number_of_players = p_num_or_sid
             self.p_id = int(data[1])
-            print(f"Session id: {data[0]}")
+            self.room = data[0]
+            print(f"Room ID: {data[0]}")
 
     def ready_state(self) -> None:
-        text = self.game_font.render("Waiting for connections....", 1, (0,0,0))
-        text_rect = text.get_rect(center=(self.width/2, self.height/2))
-        self.screen.blit(text, text_rect)
+        self.room_stat()
+        self.waiting_stat()
+        self.players_stat()
+
+    def waiting_stat(self) -> None:
+        count = 0
+        for name in self.game_state['players']:
+            if not name: count += 1
+        if not count:
+            t0 = self.game_font.render("ALL CONNECTED, ", 1, (0, 48, 146))
+            t0 = self.game_font.render("LET'S BEGIN...", 1, (62, 123, 39))
+            t_surf = pygame.Surface((t0.get_width()+t0.get_width(), max(t0.get_height(),t0.get_height())))
+            t_surf.fill((255,255,255))
+            t_surf.blit(t0, (0,0))
+            t_surf.blit(t0, (t0.get_width(),0))
+        else:
+            t0 = self.game_font.render("Waiting for ", 1, (0,0,0))
+            t0 = self.game_font.render(f"{count} ", 1, (255,0,0))
+            t2 = self.game_font.render(f"other {'player' if count==1 else 'players'}...", 1, (0,0,0))
+            t_surf = pygame.Surface((t0.get_width()+t0.get_width()+t2.get_width(), max(t0.get_height(),t0.get_height(),t2.get_height())))
+            t_surf.fill((255,255,255))
+            t_surf.blit(t0, (0,0))
+            t_surf.blit(t0, (t0.get_width(),0))
+            t_surf.blit(t2, (t0.get_width()+t0.get_width(),0))
+        t_surf_rect = t_surf.get_rect(center=(self.width/2, self.height/2))
+        self.screen.blit(t_surf, t_surf_rect)
+
+    def room_stat(self) -> None:
+        t0 = self.opponent_font.render(f"Group \"{self.room}\": ", 1, (0,0,0))
+        t0 = self.opponent_font.render(f"{'Created' if self.cmd.startswith('C') else 'Joined'}", 1, (200,0,0))
+        t_surf = pygame.Surface((t0.get_width() + t0.get_width(), max(t0.get_height(), t0.get_height())))
+        t_surf.fill((255,255,255))
+        t_surf.blit(t0, (0,0))
+        t_surf.blit(t0, (t0.get_width(),0))
+        merge_surf_rect = t_surf.get_rect(topleft=(10,10))
+        self.screen.blit(t_surf, merge_surf_rect)
+
+    def players_stat(self) -> None:
+        you_text = self.room_font.render("You connected", 1, (0,0,0))
+        you_text_rect = you_text.get_rect(topleft=(10,45))
+        checked = self.checkmark.get_rect(topleft=(you_text_rect.topright[0]+5, you_text_rect.topright[1]))
+        self.screen.blit(you_text, you_text_rect)
+        self.screen.blit(self.checkmark, checked)
+        line_space = self.room_font.get_linesize()
+        y_pos = you_text_rect.bottomleft[1] + 10
+        for name in self.game_state['players']:
+            if name and name != self.name:
+                t = self.room_font.render(f"{name} connected", 1, (0,0,0))
+                t_rect = t.get_rect(topleft=(10, y_pos))
+                checked = self.checkmark.get_rect(topleft=(t_rect.topright[0]+5, t_rect.topright[1]))
+                self.screen.blit(t, t_rect)
+                self.screen.blit(self.checkmark, checked)
+                y_pos += line_space + 10
                 
     def cards_rects(self) -> Dict[int, Card_Rect]:
         game_rects_dict = {}
@@ -159,12 +217,12 @@ class Client:
 
     def draw_win_chance(self) -> None:
         if self.last_analyze < 100:
-            text1 = self.game_font.render("Wining chance: ", 1, (0, 0, 0))
-            text2 = self.game_font.render(f"{self.last_analyze}%", 1, (255, 0, 0))
-            merged_surface = pygame.Surface((text1.get_width() + text2.get_width(), max(text1.get_height(), text2.get_height())))
+            t0 = self.game_font.render("Wining chance: ", 1, (0, 0, 0))
+            t1 = self.game_font.render(f"{self.last_analyze}%", 1, (255, 0, 0))
+            merged_surface = pygame.Surface((t0.get_width() + t1.get_width(), max(t0.get_height(), t1.get_height())))
             merged_surface.fill((255,255,255))
-            merged_surface.blit(text1, (0,0))
-            merged_surface.blit(text2, (text1.get_width(),0))
+            merged_surface.blit(t0, (0,0))
+            merged_surface.blit(t1, (t0.get_width(),0))
             merged_surface_rect = merged_surface.get_rect(topright=(self.width-10, 5))
             self.screen.blit(merged_surface, merged_surface_rect)
 
@@ -277,7 +335,7 @@ class Client:
             pygame.mixer.Sound.play(self.count3)
             self.counter -= 1
         elif num == self.counter and self.counter == 0:
-            pygame.mixer.Sound.play(self.count1)
+            pygame.mixer.Sound.play(self.count0)
             self.counter -= 1
 
     async def draw_start_counter(self) -> None:
@@ -287,12 +345,12 @@ class Client:
             text3_rect = text3.get_rect(midbottom=(self.width/2, 462))
             self.screen.blit(text3, text3_rect)
         else:
-            text1 = self.game_font.render(f"Starting in ", 1, (0,0,0))
-            text2 = self.game_font.render(f"{countdown}s", 1, (255,0,0))
-            merged_surface = pygame.Surface((text1.get_width()+text2.get_width(), max(text1.get_height(),text2.get_height())))
+            t0 = self.game_font.render(f"Starting in ", 1, (0,0,0))
+            t1 = self.game_font.render(f"{countdown}s", 1, (255,0,0))
+            merged_surface = pygame.Surface((t0.get_width()+t1.get_width(), max(t0.get_height(),t1.get_height())))
             merged_surface.fill((255,255,255))
-            merged_surface.blit(text1, (0,0))
-            merged_surface.blit(text2, (text1.get_width(),0))
+            merged_surface.blit(t0, (0,0))
+            merged_surface.blit(t1, (t0.get_width(),0))
             merged_surface_rect = merged_surface.get_rect(midbottom=(self.width/2, 462))
             self.screen.blit(merged_surface, merged_surface_rect)
         await self.countdown_sound(countdown)
@@ -337,6 +395,13 @@ class Client:
     async def run(self) -> None:
         connected = all(self.game_state["players"])
         if not connected:
+            self.ready_state()
+
+        elif connected and self.ready:
+            self.start = pygame.time.get_ticks()
+            self.ready = False
+
+        elif connected and (pygame.time.get_ticks() - self.start <= 5000):
             self.ready_state()
 
         elif connected and not self.game_state["running"] and 1 not in self.game_state["result"]:
@@ -386,7 +451,6 @@ class Client:
                     self.cards = GameSerialization.deserialize_cards(cards_data)
                     self.game_rects = self.cards_rects()
                     self.cards_analyze = tuple((self.card_analize(card) for card in self.cards[self.p_id]))
-                    # print((self.cards_analyze)[0][0])
             except asyncio.IncompleteReadError as e:
                 print(f"Getting cards error: {e}")
 
