@@ -34,7 +34,7 @@ class Client:
         self.game_state: Optional[Dict[str, Any]] = None
         self.cards: Optional[Dict[int, List[Card]]] = None
         self.game_rects: Optional[Dict[int, Card_Rect]] = None
-        self.get_pos: Optional[Tuple[int, int]] = None
+        # self.get_pos: Optional[Tuple[int, int]] = None
         self.reset_button: int = 0
         self.marked_rects: List[Rects] = []
         self.result_visible: bool = False
@@ -48,7 +48,7 @@ class Client:
 
         # Win check analyze
         self.cards_analyze: Optional[Tuple[Tuple[int, int, int], ...]] = None
-        self.marked_rows: List[List[int]] = [[0, 0, 0] for _ in range(cards_num)]
+        self.marked_rows: Optional[List[List[int]]] = None
         self.last_analyze: int = 0
 
         # Screen
@@ -70,7 +70,7 @@ class Client:
         self.wrong: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/wrong.wav'))
         self.win: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/win.wav'))
         self.lose: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/lose.mp3'))
-        self.count3: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/count0.wav'))
+        self.count3: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/count1.wav'))
         self.count0: pygame.mixer.Sound = pygame.mixer.Sound(str(self.cd / 'Soundeffects/count2.wav'))
 
         # Image setup
@@ -103,30 +103,30 @@ class Client:
             if not name: count += 1
         if not count:
             t0 = self.game_font.render("ALL CONNECTED, ", 1, (0, 48, 146))
-            t0 = self.game_font.render("LET'S BEGIN...", 1, (62, 123, 39))
+            t1 = self.game_font.render("LET'S BEGIN...", 1, (62, 123, 39))
             t_surf = pygame.Surface((t0.get_width()+t0.get_width(), max(t0.get_height(),t0.get_height())))
             t_surf.fill((255,255,255))
             t_surf.blit(t0, (0,0))
-            t_surf.blit(t0, (t0.get_width(),0))
+            t_surf.blit(t1, (t0.get_width(),0))
         else:
             t0 = self.game_font.render("Waiting for ", 1, (0,0,0))
-            t0 = self.game_font.render(f"{count} ", 1, (255,0,0))
+            t1 = self.game_font.render(f"{count} ", 1, (255,0,0))
             t2 = self.game_font.render(f"other {'player' if count==1 else 'players'}...", 1, (0,0,0))
-            t_surf = pygame.Surface((t0.get_width()+t0.get_width()+t2.get_width(), max(t0.get_height(),t0.get_height(),t2.get_height())))
+            t_surf = pygame.Surface((t0.get_width()+t1.get_width()+t2.get_width(), max(t0.get_height(),t1.get_height(),t2.get_height())))
             t_surf.fill((255,255,255))
             t_surf.blit(t0, (0,0))
-            t_surf.blit(t0, (t0.get_width(),0))
-            t_surf.blit(t2, (t0.get_width()+t0.get_width(),0))
+            t_surf.blit(t1, (t0.get_width(),0))
+            t_surf.blit(t2, (t0.get_width()+t1.get_width(),0))
         t_surf_rect = t_surf.get_rect(center=(self.width/2, self.height/2))
         self.screen.blit(t_surf, t_surf_rect)
 
     def room_stat(self) -> None:
         t0 = self.opponent_font.render(f"Group \"{self.room}\": ", 1, (0,0,0))
-        t0 = self.opponent_font.render(f"{'Created' if self.cmd.startswith('C') else 'Joined'}", 1, (200,0,0))
+        t1 = self.opponent_font.render(f"{'Created' if self.cmd.startswith('C') else 'Joined'}", 1, (200,0,0))
         t_surf = pygame.Surface((t0.get_width() + t0.get_width(), max(t0.get_height(), t0.get_height())))
         t_surf.fill((255,255,255))
         t_surf.blit(t0, (0,0))
-        t_surf.blit(t0, (t0.get_width(),0))
+        t_surf.blit(t1, (t0.get_width(),0))
         merge_surf_rect = t_surf.get_rect(topleft=(10,10))
         self.screen.blit(t_surf, merge_surf_rect)
 
@@ -200,20 +200,17 @@ class Client:
             self.last_analyze = number
         return None
         
-    async def rect_check(self) -> None:
-        if self.get_pos:
-            for i in range(len(self.game_rects[self.p_id])):
-                for rect in self.game_rects[self.p_id][i]:
-                    if rect.clicked(self.get_pos) and rect.text == str(self.game_state["rand_num"]):
-                        self.marked_rects.append(rect)
-                        self.marked_rows[i][rect.row] += 1
-                        self.win_chance(i, rect.row)
-                        pygame.mixer.Sound.play(self.checked)
-                        await self.net.send(f"M{rect.text},{i}")
-                        self.get_pos = None
-                        return None
-            pygame.mixer.Sound.play(self.wrong)
-            self.get_pos = None
+    async def rect_check(self, pos) -> None:
+        for i in range(len(self.game_rects[self.p_id])):
+            for rect in self.game_rects[self.p_id][i]:
+                if rect.clicked(pos) and rect.text == str(self.game_state["rand_num"]):
+                    self.marked_rects.append(rect)
+                    self.marked_rows[i][rect.row] += 1
+                    self.win_chance(i, rect.row)
+                    pygame.mixer.Sound.play(self.checked)
+                    await self.net.send(f"M{rect.text},{i}")
+                    return None
+        pygame.mixer.Sound.play(self.wrong)                    
 
     def draw_win_chance(self) -> None:
         if self.last_analyze < 100:
@@ -415,7 +412,6 @@ class Client:
             self.draw_rects()
             if self.game_state['rand_num']:
                 await self.draw_random_num()
-                await self.rect_check()
                 self.draw_win_chance()
             else:
                 await self.draw_result()
@@ -450,6 +446,7 @@ class Client:
                 else:
                     self.cards = GameSerialization.deserialize_cards(cards_data)
                     self.game_rects = self.cards_rects()
+                    self.marked_rows = [[0, 0, 0] for _ in range(self.cards_num)]
                     self.cards_analyze = tuple((self.card_analize(card) for card in self.cards[self.p_id]))
             except asyncio.IncompleteReadError as e:
                 print(f"Getting cards error: {e}")
@@ -462,7 +459,8 @@ class Client:
                     sys.exit()
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    self.get_pos = pygame.mouse.get_pos()
+                    if self.game_state and self.game_state['running']:
+                        await self.rect_check(event.pos)
 
                 elif event.type == pygame.KEYDOWN:  
                     if event.key == pygame.K_SPACE:
