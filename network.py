@@ -10,12 +10,12 @@ class Network:
         self.reader: Optional[asyncio.StreamReader] = None
         self.lock: asyncio.Lock = asyncio.Lock()
 
-    async def connect(self, cmd: str, p_num_or_sid: int | str, cards: int, players: int) -> Optional[List[str]]:
+    async def connect(self, cmd: str, p_num_or_sid: int | str, cards: int, username: str) -> Optional[List[str]]:
         try:
             # Connecting..
             self.reader, self.writer = await asyncio.open_connection(self.ip, self.port)
             # Sending player's init info
-            message: bytes = f"{cmd}:{p_num_or_sid}:{cards}:{players}".encode()
+            message: bytes = f"{cmd}:{p_num_or_sid}:{cards}:{username}".encode()
             length: bytes = struct.pack("I", len(message))
             self.writer.write(length+message)
             await self.writer.drain()

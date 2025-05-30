@@ -86,17 +86,22 @@ class Server:
                     writer.write(f"{sid}:{user_id}".encode())
                     await writer.drain()       
 
-                elif command == "JOIN" and parts[0] in self.sessions:
-                    session = self.sessions[parts[0]]
-                    if session["current_members"] == session["max_members"]:
-                        print(f"Group {session['id']} has been occupied, Members: {session['current_members']}")
-                        writer.write("0:0".encode())
-                        await writer.drain()
-                        return None
+                elif command == "JOIN":
+                    if parts[0] in self.sessions:
+                        session = self.sessions[parts[0]]
+                        if session["current_members"] == session["max_members"]:
+                            print(f"Group {session['id']} has been occupied, Members: {session['current_members']}")
+                            writer.write("1:0".encode())
+                            await writer.drain()
+                            return None
+                        else:
+                            players, user_id = await self.join_session(writer, session, *parts[1:])
+                            print(f"{parts[-1]} added to {parts[0]}'s group, Remaining: {session['max_members'] - session['current_members']}")
+                            writer.write(f"{players}:{user_id}".encode())
+                            await writer.drain()
                     else:
-                        players, user_id = await self.join_session(writer, session, *parts[1:])
-                        print(f"{parts[-1]} added to {parts[0]}'s group, Remaining: {session['max_members'] - session['current_members']}")
-                        writer.write(f"{players}:{user_id}".encode())
+                        print("Group not found!")
+                        writer.write("0:0".encode())
                         await writer.drain()
                 else:
                     print("Unrecognized command!")

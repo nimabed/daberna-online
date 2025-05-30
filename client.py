@@ -6,8 +6,8 @@ from typing import List, Optional, Dict, Tuple, Any
 
 from rects import Rects
 from setting import *
-from network import Network
 from serialization import GameSerialization
+from menu import Menu
 
 # Type aliases
 Card = List[List[str]]
@@ -17,15 +17,13 @@ pygame.mixer.pre_init()
 pygame.init()
 clock: pygame.time.Clock = pygame.time.Clock()
 
-
 class Client:
-    def __init__(self, ip: str, port: int, cards_num: int, name: str) -> None:
+    def __init__(self, ip: str, port: int) -> None:
         self.number_of_players = None
-        self.cards_num: int = cards_num
-        self.name: str = name
+        self.cards_num: Optional[int] = None
+        self.name: Optional[str] = None
 
         # Network setup
-        self.net: Network = Network(ip, port)
         self.p_id: Optional[int] = None
         self.room: str = None
         self.cmd: str = None
@@ -34,7 +32,6 @@ class Client:
         self.game_state: Optional[Dict[str, Any]] = None
         self.cards: Optional[Dict[int, List[Card]]] = None
         self.game_rects: Optional[Dict[int, Card_Rect]] = None
-        # self.get_pos: Optional[Tuple[int, int]] = None
         self.reset_button: int = 0
         self.marked_rects: List[Rects] = []
         self.result_visible: bool = False
@@ -57,6 +54,10 @@ class Client:
         self.screen: pygame.Surface = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption('Daberna')
 
+        # Menu
+        self.menu = Menu(self.width, self.height, ip, port)
+        self.net = self.menu.net
+
         # Font setup
         self.room_font: pygame.font.Font = pygame.font.SysFont("FreeSerif", 18)
         self.game_font: pygame.font.Font = pygame.font.SysFont("FreeSerif", 30)
@@ -76,21 +77,10 @@ class Client:
         # Image setup
         self.checkmark = pygame.image.load(str(self.cd / 'images/icon_checkmark.png'))
 
-    async def network_init(self, command: str, p_num_or_sid: int | str) -> None:
-        data = await self.net.connect(command, p_num_or_sid, self.cards_num, self.name)
-        self.cmd = command
-        if command == "JOIN":
-            self.number_of_players= int(data[0])
-            if self.number_of_players == 0:
-                print("Group is full!")
-                return None
-            self.p_id = int(data[1])
-            self.room = p_num_or_sid
-        else:
-            self.number_of_players = p_num_or_sid
-            self.p_id = int(data[1])
-            self.room = data[0]
-            print(f"Room ID: {data[0]}")
+    async def client_init(self) -> None:
+        self.name, self.cards_num, num_sid, self.cmd = self.menu.info
+        self.room, self.p_id = self.menu.room, self.menu.p_id
+        self.number_of_players = num_sid if not self.menu.p_num else self.menu.p_num
 
     def ready_state(self) -> None:
         self.room_stat()
@@ -425,16 +415,18 @@ class Client:
 
     async def get_game(self) -> None:
         while self.stop_event:
-            try:
-                game = await self.net.send("get")
-                if not game:
-                    print("Can not get the game state!")
-                    break
-                else:
-                    self.game_state = GameSerialization.deserialize(game)
-            except asyncio.IncompleteReadError as e:
-                print(f"Getting game state error: {e}")
-            
+            if self.menu.run_game:
+                if not self.game_state:
+                    await self.client_init()
+                try:
+                    game = await self.net.send("get")
+                    if not game:
+                        print("Can not get the game state!")
+                        break
+                    else:
+                        self.game_state = GameSerialization.deserialize(game)
+                except asyncio.IncompleteReadError as e:
+                    print(f"Getting game state error: {e}")
             await asyncio.sleep(0.1)         
 
     async def get_cards(self) -> None:
@@ -461,13 +453,19 @@ class Client:
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if self.game_state and self.game_state['running']:
                         await self.rect_check(event.pos)
-
+                    else:
+                        await self.menu.state_manager(event.pos)
+                        
                 elif event.type == pygame.KEYDOWN:  
-                    if event.key == pygame.K_SPACE:
+                    if self.menu.current_state == 'create group' or 'join group' and self.menu.cursor.active:
+                        if event.key == pygame.K_BACKSPACE:
+                            self.menu.cursor.box[1].text = self.menu.cursor.box[1].text[:-1]
+                        else:
+                            self.menu.cursor.box[1].text += event.unicode
+                    elif event.key == pygame.K_SPACE:
                         if not self.reset_button and 1 in self.game_state['result']:
                             asyncio.create_task(self.reset_request())
-
-                    if event.key == pygame.K_q:
+                    elif event.key == pygame.K_q:
                         if not self.reset_button and 1 in self.game_state['result']:
                             pygame.quit()
                             sys.exit()
@@ -476,11 +474,12 @@ class Client:
 
     async def update_display(self) -> None:
         while True:
-            self.screen.fill((255,255,255))
-
             if self.game_state:
+                self.screen.fill((255,255,255))
                 await self.run()
-
+            else:
+                self.screen.fill((68, 34, 88))
+                await self.menu.draw(self.screen)
             pygame.display.update()
             clock.tick(60)
             await asyncio.sleep(0)
