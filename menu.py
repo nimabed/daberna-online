@@ -10,8 +10,9 @@ class Menu:
     def __init__(self, width: int, height: int, ip: str, port: int) -> None:
         # Variables
         self.info: Optional[Tuple[str, int, Any, str]] = None
-        self.p_id: int = None
+        self.cards_num: int = None
         self.room: str = None
+        self.p_name: str = None
         self.p_num: int = None
         self.width: int = width
         self.height: int = height
@@ -20,7 +21,7 @@ class Menu:
         self.current_state: str = "main"
         self.cursor: Cursor = Cursor()
         self.net: Network = Network(ip, port)
-        self.run_game: bool = False
+        # self.run_game: bool = False
         self.create_error: Optional[str] = None
         
         # Font
@@ -43,20 +44,20 @@ class Menu:
     async def network_init(self, *args) -> None:
         self.info = args
         name, cards_num, players_or_sid, command = args
-        data = await self.net.connect(command, players_or_sid, cards_num, name)
-        if command.startswith('J'):
-            if not int(data[0]):
-                self.create_error = "Wrong Group ID"
-                return 1
-            elif int(data[0]) == 1:
-                self.create_error = "Group has been occupied"
-                return 1
-            self.room = players_or_sid
-            self.p_num = int(data[0])
-            self.p_id = int(data[1])
-        else:
-            self.room = data[0]
-            self.p_id = int(data[1])
+        await self.net.connect(command, players_or_sid, cards_num, name)
+        # if command.startswith('J'):
+        #     if not int(data[0]):
+        #         self.create_error = "Wrong Group ID"
+        #         return 1
+        #     elif int(data[0]) == 1:
+        #         self.create_error = "Group has been occupied"
+        #         return 1
+        #     self.room = players_or_sid
+        #     self.p_num = int(data[0])
+        #     self.p_id = int(data[1])
+        # else:
+        #     self.room = data[0]
+        #     self.p_id = int(data[1])
 
     def reset_boxes(self) -> None:
         self.create_error, self.info = None, None
@@ -64,32 +65,44 @@ class Menu:
             box.text = ''
 
     def back_button(self) -> TextButton:
-        return TextButton('back', self.button_font, self.orange, 60, 40)
+        back_but = TextButton('back', self.button_font, self.orange)
+        back_but.t_surf_rect.topleft = (20, 20)
+        return back_but
 
     def main_menu(self) -> Tuple[TextButton, TextButton]:
-        create_group: TextButton = TextButton('create group', self.button_font, self.orange, self.width/2, self.height/2)
-        join_group: TextButton = TextButton('join group', self.button_font, self.orange, self.width/2, self.height/2+40)
+        create_group: TextButton = TextButton('create group', self.button_font, self.orange)
+        create_group.t_surf_rect.center = (self.width/2, self.height/2)
+        join_group: TextButton = TextButton('join group', self.button_font, self.orange)
+        join_group.t_surf_rect.center = (self.width/2, self.height/2 + 50)
         return create_group, join_group
 
     def create_group_menu(self) -> Tuple[Box, InputSpinner, InputSpinner, TextButton, TextButton, TextButton, TextButton]:
-        name_text = TextButton('name', self.button_font, self.orange, self.width/2-200, self.height/2-40)
-        name_box = Box(self.width/2, self.height/2 - 65, 150, 30)
-        cards_text = TextButton('number of cards', self.button_font, self.orange, self.width/2-200, self.height/2)
-        cards_box = InputSpinner(self.width/2, self.height/2 - 15, 150, 30)
-        players_text = TextButton('number of players', self.button_font, self.orange, self.width/2-200, self.height/2+40)
-        players_box = InputSpinner(self.width/2, self.height/2 + 35, 150, 30)
+        name_text = TextButton('name', self.button_font, self.orange)
+        name_text.t_surf_rect.topleft = (self.width/2 - 180, self.height/2 - 40)
+        name_box = Box(self.width/2+20, self.height/2 - 45, 150, 30)
+        cards_text = TextButton('cards', self.button_font, self.orange)
+        cards_text.t_surf_rect.topleft = (self.width/2 - 180, self.height/2 + 10)
+        cards_box = InputSpinner(self.width/2+54, self.height/2 + 5, 88, 32)
+        players_text = TextButton('players', self.button_font, self.orange)
+        players_text.t_surf_rect.topleft = (self.width/2 - 180, self.height/2 + 60)
+        players_box = InputSpinner(self.width/2+54, self.height/2 + 55, 88, 32)
         players_box.var = 2
-        create = TextButton('CREATE', self.button_font, self.white, self.width/2, self.height-150)
+        create = TextButton('CREATE', self.button_font, self.orange)
+        create.t_surf_rect.center = (self.width/2, self.height/2 + 200)
         return name_box, cards_box, players_box, create, name_text, cards_text, players_text
 
     def join_group_menu(self) -> Tuple[Box, InputSpinner, Box, TextButton, TextButton, TextButton, TextButton]:
-        name_text = TextButton('name', self.button_font, self.orange, self.width/2-200, self.height/2-40)
-        name_box = Box(self.width/2, self.height/2 - 65, 150, 30)
-        cards_text = TextButton('number of cards', self.button_font, self.orange, self.width/2-200, self.height/2)
-        cards_box = InputSpinner(self.width/2, self.height/2 - 15, 150, 30)
-        group_id_text = TextButton('group id', self.button_font, self.orange, self.width/2-200, self.height/2+40)
-        group_id_box = Box(self.width/2, self.height/2 + 35, 150, 30)
-        join = TextButton('JOIN', self.button_font, self.white, self.width/2, self.height-150)
+        name_text = TextButton('name', self.button_font, self.orange)
+        name_text.t_surf_rect.topleft = (self.width/2 - 180, self.height/2 - 40)
+        name_box = Box(self.width/2+20, self.height/2 - 45, 150, 30)
+        cards_text = TextButton('cards', self.button_font, self.orange)
+        cards_text.t_surf_rect.topleft = (self.width/2 - 180, self.height/2 + 10)
+        cards_box = InputSpinner(self.width/2+54, self.height/2 + 5, 88, 32)
+        group_id_text = TextButton('group id', self.button_font, self.orange)
+        group_id_text.t_surf_rect.topleft = (self.width/2 - 180, self.height/2 + 60)
+        group_id_box = Box(self.width/2+20, self.height/2 + 55, 150, 30)
+        join = TextButton('JOIN', self.button_font, self.orange)
+        join.t_surf_rect.center = (self.width/2, self.height/2 + 200)
         return name_box, cards_box, group_id_box, join, name_text, cards_text, group_id_text
 
     def show_error(self) -> Tuple[pygame.Surface, pygame.Rect]:
@@ -105,8 +118,10 @@ class Menu:
             if len(name) < 2:
                 self.create_error = "Name must be at least 2 characters!"
                 return None
-            if not await self.network_init(name, cards_num, p_num_or_sid, command):
-                self.run_game = True
+            self.p_num = p_num_or_sid
+            self.cards_num = cards_num
+            self.p_name = name
+            await self.net.connect(command, p_num_or_sid, cards_num, name)
 
     async def join_button(self, pos: Tuple[int, int]) -> None:
         # Authorization error handling
@@ -115,8 +130,11 @@ class Menu:
             if len(name) < 2:
                 self.create_error = "Name must be at least 2 characters!"
                 return None
-            if not await self.network_init(name, cards_num, p_num_or_sid, command):
-                self.run_game = True
+            self.room = p_num_or_sid
+            self.cards_num = cards_num
+            self.p_name = name
+            await self.net.connect(command, p_num_or_sid, cards_num, name)
+
 
     async def draw_back_button(self, win: pygame.Surface) -> None:
         self.back_button().draw(win)
@@ -174,11 +192,13 @@ class Menu:
                     self.current_state = option.text
                     break
         elif self.current_state == 'create group':
-            self.cursor.pos(self.create_boxes[:1], pos)
+            if self.cursor.pos(self.create_boxes[:1], pos):
+                self.create_error = None
             self.spin_click_check(self.create_boxes[1:3], pos)
             await self.create_button(pos)
         elif self.current_state == 'join group':
-            self.cursor.pos((self.join_boxes[0], self.join_boxes[2]), pos)
+            if self.cursor.pos((self.join_boxes[0], self.join_boxes[2]), pos):
+                self.create_error = None
             self.spin_click_check((self.join_boxes[1],), pos)
             await self.join_button(pos)
             

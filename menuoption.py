@@ -2,13 +2,13 @@ import pygame
 from pathlib import Path
 from typing import Tuple, Optional, Any
 
-class TextButton:
-    def __init__(self, text: str, font: pygame.font.Font, color: Tuple[int, int, int] , x: int, y: int) -> None:
+class TextButton: 
+    def __init__(self, text: str, font: pygame.font.Font, color: Tuple[int, int, int]) -> None:
         self.text = text
-        self.x = x
-        self.y = y
+        # self.x = x
+        # self.y = y
         self.t_surf = font.render(text, 1, color)
-        self.t_surf_rect = self.t_surf.get_rect(midbottom=(self.x, self.y))
+        self.t_surf_rect = self.t_surf.get_rect()
         
     def draw(self, win: pygame.Surface) -> None:
         win.blit(self.t_surf, self.t_surf_rect)
@@ -31,6 +31,11 @@ class Box:
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
 
     def draw(self, win: pygame.Surface) -> None:
+        text_width = self.t_surf().get_width()
+        if text_width > self.width:
+            self.rect.width = text_width + 10
+        else:
+            self.rect.width = self.width
         pygame.draw.rect(win, self.light_gray, self.rect)
 
     def clicked(self, pos: Tuple[int, int]) -> bool:
@@ -70,7 +75,7 @@ class Cursor:
                 self.active = True
                 self.start = pygame.time.get_ticks()
                 self.box = (i, box)
-                break
+                return 1
                 
 
 class InputSpinner:
@@ -85,10 +90,10 @@ class InputSpinner:
         self.font = pygame.font.SysFont(None, 30)
 
         self.main_box = pygame.Rect(x, y, width, height)
-        self.inc_img = pygame.image.load(str(self.cd / 'images/arrow_basic_e_small.png')).convert_alpha()
-        self.dec_img = pygame.image.load(str(self.cd / 'images/arrow_basic_w_small.png')).convert_alpha()
-        self.inc_img_rect = self.inc_img.get_rect(topright=(self.main_box.topright[0], y + 3))
-        self.dec_img_rect = self.dec_img.get_rect(topleft=(x, y + 3))
+        self.inc_img = pygame.image.load(str(self.cd / 'images/arrow_basic_e.png')).convert_alpha()
+        self.dec_img = pygame.image.load(str(self.cd / 'images/arrow_basic_w.png')).convert_alpha()
+        self.inc_img_rect = self.inc_img.get_rect(topleft=(self.main_box.topright[0]+2, y))
+        self.dec_img_rect = self.dec_img.get_rect(topright=(x-2, y))
 
     def input_num(self) -> Tuple[pygame.Surface, pygame.Rect]:
         t = self.font.render(f"{self.var}", 1, self.black)

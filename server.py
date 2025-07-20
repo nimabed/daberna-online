@@ -83,26 +83,35 @@ class Server:
                     session["current_members"] += 1
                     session["game_session"].players_cards[user_id] = [session["game_session"].generate_card() for _ in range(int(parts[1]))]
                     print(f"Group {sid} created by {parts[-1]}, Capacity: {session['max_members']}")
-                    writer.write(f"{sid}:{user_id}".encode())
+
+                    msg = f"{sid}:{user_id}".encode()
+                    length = struct.pack("I", len(msg))
+                    writer.write(length + msg)
                     await writer.drain()       
 
                 elif command == "JOIN":
                     if parts[0] in self.sessions:
                         session = self.sessions[parts[0]]
                         if session["current_members"] == session["max_members"]:
-                            print(f"Group {session['id']} has been occupied, Members: {session['current_members']}")
-                            writer.write("1:0".encode())
+                            msg = "1:0".encode()
+                            length = struct.pack("I", len(msg))
+                            writer.write(length + msg)
                             await writer.drain()
+                            print(f"Group {session['id']} has been occupied, Members: {session['current_members']}")
                             return None
                         else:
                             players, user_id = await self.join_session(writer, session, *parts[1:])
-                            print(f"{parts[-1]} added to {parts[0]}'s group, Remaining: {session['max_members'] - session['current_members']}")
-                            writer.write(f"{players}:{user_id}".encode())
+                            msg = f"{players}:{user_id}".encode()
+                            length = struct.pack("I", len(msg))
+                            writer.write(length + msg)
                             await writer.drain()
+                            print(f"{parts[-1]} added to {parts[0]}'s group, Remaining: {session['max_members'] - session['current_members']}")
                     else:
-                        print("Group not found!")
-                        writer.write("0:0".encode())
+                        msg = "0:0".encode()
+                        length = struct.pack("I", len(msg))
+                        writer.write(length + msg)
                         await writer.drain()
+                        print("Group not found!")
                 else:
                     print("Unrecognized command!")
                     return None

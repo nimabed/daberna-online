@@ -34,11 +34,13 @@ class GameSession:
     async def retry_game(self) -> None:
         if self.try_var == self.player_nums and 1 in self.game.result:
             await self.game.reset()
+            message = 'start'.encode()
+            message_length = struct.pack("I", len(message))
 
             for client in self.clients:
-                client.write('start'.encode())
+                client.write(message_length + message)
                 await client.drain()
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(0.2)
 
     async def send_cards(self, client: asyncio.StreamWriter) -> None:
         players_cards_bytes: bytes = GameSerialization.serialize_cards(self.players_cards)
@@ -53,6 +55,8 @@ class GameSession:
         except Exception as e:
             print(f"Cannot send player cards: {e}")
 
+        # print(f"Cards sent for client")
+
         if self.number_of_sent_cards == self.player_nums:
             await asyncio.sleep(0.1)
             asyncio.create_task(self.random_numbers())
@@ -66,13 +70,26 @@ class GameSession:
         client.write(message_length+message_bytes)
         await client.drain()
 
+    async def client_leave(self, idx):
+        if self.clients:
+            for i, client in enumerate(self.clients):
+                if i == idx:
+                    continue
+                msg = f"exit{self.game.players[idx]}".encode()
+                length = struct.pack("I", len(msg))
+                client.write(length + msg)
+                await client.drain()
+            await asyncio.sleep(0.2)
+
+
+
     async def random_numbers(self) -> None:
         numbers: List[int] = [_ for _ in range(1,91)]
         copy_counter: int = self.game.random_num_counter
         while True:
             if self.game.running and len(self.clients) == self.player_nums:
                 num: int = random.choice(numbers)
-                self.game.rand_num: int = num
+                self.game.rand_num = num
                 numbers.remove(num)
                 for i in range(copy_counter):
                     self.game.random_num_counter -= 1
@@ -80,10 +97,10 @@ class GameSession:
                         async with self.lock:
                             self.game.rand_num = None
                             self.game.running = False
-                            self.try_var: int = 0
+                            self.try_var = 0
                             return None
                     await asyncio.sleep(1)
-                self.game.random_num_counter: int = copy_counter
+                self.game.random_num_counter = copy_counter
             elif self.try_var == self.player_nums:
                 self.game.start_counter -= 1
                 await asyncio.sleep(1.5)
@@ -113,21 +130,25 @@ class GameSession:
                     elif data.startswith("M"):
                         await self.game.player_move(player_idx, data[1:])
                         await self.game.winner_check(player_idx, self.players_cards[player_idx])
-                    elif data.endswith("reset"):
+                    elif data == "reset":
                         async with self.lock:
                             self.try_var += 1
-                            self.players_cards[player_idx] = [self.generate_card() for _ in range(int(data[0]))]
+                            num = len(self.players_cards[player_idx])
+                            self.players_cards[player_idx] = [self.generate_card() for _ in range(num)]
 
                             if self.try_var == self.player_nums:
                                 await self.retry_game()
                     elif data == "getcards":
                         async with self.lock:
                             await self.send_cards(writer)
+                    else:
+                        await self.client_leave(player_idx)
+                        break
             except (asyncio.IncompleteReadError, BrokenPipeError) as e:
                 print(f"Problem in receiving data from player {player_idx}: {e}") 
                 break
         async with self.lock:
-            self.game.players[player_idx] = ""
+            # self.game.players[player_idx] = ""
             self.clients.remove(writer)
             self.try_var -= 1
             self.game.running = False
